@@ -334,7 +334,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '4.2 · 03-10-2026';
+const VERSION = '4.3 · 03-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1179,7 +1179,6 @@ function abrirFicha(id){
     <div class="fotobar">
       <button data-foto="camara">📷 Hacer una foto</button>
       <button data-foto="galeria">Elegir de la galería</button>
-      ${f ? `<button data-quitarfoto="${r.id}">Volver al dibujo</button>` : ''}
     </div>
     <h3>${escapar(r.nombre)}</h3>
     <div class="etiquetas">${r.tipos.map(t => `<span class="etq">${nombreTipo(t)}</span>`).join('')}</div>
@@ -1199,7 +1198,6 @@ function abrirFicha(id){
 $('ficha').addEventListener('click', async e => {
   const f = e.target.closest('[data-fav]');
   const ft = e.target.closest('[data-foto]');
-  const qf = e.target.closest('[data-quitarfoto]');
   const ed = e.target.closest('[data-editar]');
   const bo = e.target.closest('[data-borrar]');
   if(f){
@@ -1208,10 +1206,6 @@ $('ficha').addEventListener('click', async e => {
     await guardarDatos(); abrirFicha(id); pintarRejilla();
   }
   if(ft){ $(ft.dataset.foto === 'camara' ? 'fotoCamara' : 'fotoRapida').click(); }
-  if(qf){
-    await quitarFoto(qf.dataset.quitarfoto);
-    abrirFicha(qf.dataset.quitarfoto); pintarRejilla();
-  }
   if(ed){ cerrar('capaFicha'); abrirFormulario(ed.dataset.editar); }
   if(bo){
     const id = bo.dataset.borrar, r = datos.propias.find(x => x.id === id);
