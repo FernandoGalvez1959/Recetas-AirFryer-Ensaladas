@@ -188,6 +188,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
 
 <button class="anadir" id="btnAnadir">+ Añadir receta</button>
 <input type="file" id="fotoRapida" accept="image/*" hidden>
+<input type="file" id="fotoCamara" accept="image/*" capture="environment" hidden>
 
 <div class="aviso-act" id="banner" hidden>
   <span>Hay una versión nueva del recetario.</span>
@@ -233,8 +234,13 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
       <p class="pista">Un paso por línea.</p>
       <label for="fConsejo">Consejo (opcional)</label>
       <input id="fConsejo" type="text" placeholder="Queda mejor si no amontonas el cesto">
-      <label for="fFoto">Fotografía (opcional)</label>
-      <input id="fFoto" type="file" accept="image/*">
+      <label>Fotografía (opcional)</label>
+      <div class="acciones" style="margin-top:0">
+        <button class="btn" id="fFotoCam">📷 Hacer una foto</button>
+        <button class="btn" id="fFotoGal">Elegir de la galería</button>
+      </div>
+      <input id="fFoto" type="file" accept="image/*" capture="environment" hidden>
+      <input id="fFotoArchivo" type="file" accept="image/*" hidden>
       <p class="pista">Si no pones foto se dibuja un plato con los colores de tus ingredientes. Puedes añadirla después desde la receta.</p>
       <div class="previa" id="previa"><img id="previaImg" alt="Vista previa de la fotografía"></div>
       <p class="error" id="errorForm" role="alert"></p>
@@ -328,7 +334,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '4.1 · 24-09-2026';
+const VERSION = '4.2 · 03-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1171,7 +1177,8 @@ function abrirFicha(id){
   $('ficha').innerHTML = `
     ${img}
     <div class="fotobar">
-      <button data-foto="${r.id}">${f ? 'Cambiar mi foto' : 'Poner mi foto'}</button>
+      <button data-foto="camara">📷 Hacer una foto</button>
+      <button data-foto="galeria">Elegir de la galería</button>
       ${f ? `<button data-quitarfoto="${r.id}">Volver al dibujo</button>` : ''}
     </div>
     <h3>${escapar(r.nombre)}</h3>
@@ -1200,7 +1207,7 @@ $('ficha').addEventListener('click', async e => {
     i >= 0 ? datos.favoritos.splice(i,1) : datos.favoritos.push(id);
     await guardarDatos(); abrirFicha(id); pintarRejilla();
   }
-  if(ft){ $('fotoRapida').click(); }
+  if(ft){ $(ft.dataset.foto === 'camara' ? 'fotoCamara' : 'fotoRapida').click(); }
   if(qf){
     await quitarFoto(qf.dataset.quitarfoto);
     abrirFicha(qf.dataset.quitarfoto); pintarRejilla();
@@ -1242,7 +1249,7 @@ function comprimir(archivo){
     lector.readAsDataURL(archivo);
   });
 }
-$('fotoRapida').addEventListener('change', async e => {
+async function recibirFotoRapida(e){
   const a = e.target.files && e.target.files[0];
   e.target.value = '';
   if(!a || !fichaActual) return;
@@ -1250,7 +1257,9 @@ $('fotoRapida').addEventListener('change', async e => {
   if(!ok) alert('La foto se ve ahora, pero no ha podido guardarse. Puede que no quede espacio.');
   abrirFicha(fichaActual);
   pintarRejilla();
-});
+}
+$('fotoRapida').addEventListener('change', recibirFotoRapida);
+$('fotoCamara').addEventListener('change', recibirFotoRapida);
 
 /* ---------- capas ---------- */
 function abrir(id){ $(id).hidden = false; document.body.style.overflow = 'hidden'; }
@@ -1291,6 +1300,7 @@ function abrirFormulario(id){
   $('errorForm').textContent = '';
   $('previa').style.display = 'none';
   $('fFoto').value = '';
+  $('fFotoArchivo').value = '';
   const r = id ? datos.propias.find(x => x.id === id) : null;
   $('tituloForm').textContent = r ? 'Editar receta' : 'Nueva receta';
   $('fNombre').value = r ? r.nombre : '';
@@ -1307,13 +1317,17 @@ function abrirFormulario(id){
   abrir('capaForm');
 }
 $('btnAnadir').addEventListener('click', () => abrirFormulario(null));
-$('fFoto').addEventListener('change', async e => {
+async function recibirFotoForm(e){
   const a = e.target.files && e.target.files[0];
   if(!a) return;
   fotoTemp = await comprimir(a);
   $('previaImg').src = fotoTemp;
   $('previa').style.display = 'block';
-});
+}
+$('fFoto').addEventListener('change', recibirFotoForm);
+$('fFotoArchivo').addEventListener('change', recibirFotoForm);
+$('fFotoCam').addEventListener('click', () => $('fFoto').click());
+$('fFotoGal').addEventListener('click', () => $('fFotoArchivo').click());
 $('guardar').addEventListener('click', async () => {
   const nombre = $('fNombre').value.trim();
   const tipos = [...document.querySelectorAll('#fTipos input:checked')].map(c => c.value);
