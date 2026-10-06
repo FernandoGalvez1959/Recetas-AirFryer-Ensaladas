@@ -34,6 +34,8 @@ button{cursor:pointer}
   background:var(--oliva-2);border:1px solid #5B6E4E;border-radius:999px;
   padding:5px 12px 5px 10px;font-size:13px;color:#D6DCCB}
 .sinc[hidden]{display:none}
+.barraEstado{display:flex;flex-wrap:wrap;gap:8px}
+.sinc i.guardar{background:var(--mostaza)}
 .sinc i{width:9px;height:9px;border-radius:50%;background:#8FB36A;flex:0 0 auto}
 .sinc.trabajando i{background:var(--mostaza)}
 .sinc.aviso i{background:#E2704A}
@@ -164,7 +166,10 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
 <div class="panel">
   <h1>Recetario Air Fryer<br>y Ensaladas</h1>
   <p class="sub"><span id="total">—</span> recetas con temperatura y tiempo listos para el cesto.</p>
-  <button class="sinc" id="sinc" hidden><i></i><b>Sincronizado</b></button>
+  <div class="barraEstado">
+    <button class="sinc" id="sinc" hidden><i></i><b>Sincronizado</b></button>
+    <button class="sinc" id="btnCopiaCab"><i class="guardar"></i><b>Copia de seguridad</b></button>
+  </div>
   <div class="buscador">
     <input id="busca" type="text" placeholder="Buscar receta o ingrediente" aria-label="Buscar receta o ingrediente" autocomplete="off">
     <button class="limpiar" id="limpiar" aria-label="Borrar búsqueda" hidden>&times;</button>
@@ -334,7 +339,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '4.3 · 03-10-2026';
+const VERSION = '4.4 · 06-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1359,6 +1364,7 @@ $('guardar').addEventListener('click', async () => {
 
 /* ---------- copia de seguridad ---------- */
 $('sinc').addEventListener('click', () => { pintarSesion(); abrir('capaNube'); });
+$('btnCopiaCab').addEventListener('click', () => $('btnCopias').click());
 
 function pintarSesion(){
   const conf = confFirebase();
