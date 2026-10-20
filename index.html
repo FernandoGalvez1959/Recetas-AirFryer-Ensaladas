@@ -30,20 +30,11 @@ button{cursor:pointer}
   position:sticky;top:0;z-index:20;padding-top:calc(18px + env(safe-area-inset-top))}
 .panel h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
 .panel .sub{margin:4px 0 12px;font-size:13px;color:#BDC7B2}
-.sinc{display:inline-flex;align-items:center;gap:7px;margin:0 0 11px;cursor:pointer;
+.barraEstado{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 11px}
+.sinc{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
   background:var(--oliva-2);border:1px solid #5B6E4E;border-radius:999px;
   padding:5px 12px 5px 10px;font-size:13px;color:#D6DCCB}
-.sinc[hidden]{display:none}
-.barraEstado{display:flex;flex-wrap:wrap;gap:8px}
-.sinc i.guardar{background:var(--mostaza)}
-.sinc i{width:9px;height:9px;border-radius:50%;background:#8FB36A;flex:0 0 auto}
-.sinc.trabajando i{background:var(--mostaza)}
-.sinc.aviso i{background:#E2704A}
-.sinc.local i{background:#9AA88A}
-@media (prefers-reduced-motion:no-preference){
-  .sinc.trabajando i{animation:late 1s ease-in-out infinite}
-  @keyframes late{0%,100%{opacity:1}50%{opacity:.25}}
-}
+.sinc i{width:9px;height:9px;border-radius:50%;background:var(--mostaza);flex:0 0 auto}
 .buscador{position:relative;display:flex;align-items:center}
 .buscador input{width:100%;background:var(--papel);border:1px solid var(--linea);
   border-radius:999px;padding:11px 40px 11px 16px;color:#111}
@@ -167,7 +158,6 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
   <h1>Recetario Air Fryer<br>y Ensaladas</h1>
   <p class="sub"><span id="total">—</span> recetas con temperatura y tiempo listos para el cesto.</p>
   <div class="barraEstado">
-    <button class="sinc" id="sinc" hidden><i></i><b>Sincronizado</b></button>
     <button class="sinc" id="btnCopiaCab"><i class="guardar"></i><b>Copia de seguridad</b></button>
   </div>
   <div class="buscador">
@@ -258,46 +248,6 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
   </div>
 </div>
 
-<div class="capa" id="capaNube" hidden>
-  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloNube">
-    <header>
-      <h2 id="tituloNube">Sincronización</h2>
-      <button class="cerrar" data-cerrar="capaNube" aria-label="Cerrar">&times;</button>
-    </header>
-    <div class="contenido">
-      <p class="pista" id="estadoNube" style="margin-top:0;color:var(--tinta);font-weight:600"></p>
-
-      <div id="zonaSesion" hidden>
-        <label for="fbCorreo">Tu correo</label>
-        <input id="fbCorreo" type="text" autocomplete="username" placeholder="correo@ejemplo.com">
-        <label for="fbClave">Contraseña</label>
-        <input id="fbClave" type="password" autocomplete="current-password" placeholder="Al menos 6 caracteres">
-        <p class="pista">Usa el mismo correo y la misma contraseña en el ordenador y en el móvil: eso es lo que une las dos copias.</p>
-        <div class="acciones">
-          <button class="btn principal" id="fbEntrar">Entrar</button>
-          <button class="btn" id="fbCrear">Crear la cuenta</button>
-        </div>
-      </div>
-
-      <div id="zonaSalir" hidden>
-        <div class="acciones"><button class="btn peligro" id="fbSalir">Cerrar sesión en este dispositivo</button></div>
-      </div>
-
-      <p class="error" id="errorNube" role="alert"></p>
-
-      <details id="zonaConf" style="margin-top:20px">
-        <summary style="cursor:pointer;font-size:14px;font-weight:600">Configuración de Firebase</summary>
-        <p class="pista">Pega aquí el bloque <b>firebaseConfig</b> que da la consola de Firebase al crear la aplicación web. Solo hace falta una vez por dispositivo.</p>
-        <textarea id="confFB" placeholder='{ "apiKey": "...", "authDomain": "...", "databaseURL": "https://....firebasedatabase.app", "projectId": "...", "appId": "..." }'></textarea>
-        <div class="acciones">
-          <button class="btn principal" id="guardarConf">Guardar y conectar</button>
-          <button class="btn" id="borrarConf">Quitar la configuración</button>
-        </div>
-      </details>
-    </div>
-  </div>
-</div>
-
 <div class="capa" id="capaCopia" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloCopia">
     <header>
@@ -339,7 +289,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '4.4 · 06-10-2026';
+const VERSION = '5.0 · 20-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -679,18 +629,6 @@ const RECETAS = CRUDO.split('\n').filter(l => l.trim()).map((linea, i) => {
    ============================================================ */
 const CLAVE = 'recetario:v2';
 const CLAVE_FOTOS = 'recetario:fotos';
-const CLAVE_FB = 'recetario:firebase';
-/* Proyecto de Firebase de Fer. Estos datos no son secretos: lo que protege
-   las recetas son las reglas de la base de datos y tu contraseña. */
-window.FIREBASE_CONF = {
-  apiKey: "AIzaSyDQOmWQ6X4DifykUYKhn-i1ct9YLjRUX54",
-  authDomain: "air-fryer-996a0.firebaseapp.com",
-  databaseURL: "https://air-fryer-996a0-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "air-fryer-996a0",
-  storageBucket: "air-fryer-996a0.firebasestorage.app",
-  messagingSenderId: "212949234832",
-  appId: "1:212949234832:web:1f846404899e06148a9415"
-};
 let datos = { propias: [], favoritos: [] };
 let fotos = {};
 
@@ -714,46 +652,17 @@ async function escribirClave(k, valor){
   try{ if(window.localStorage){ localStorage.setItem(k, texto); return true; } }catch(e){ console.error(e); }
   return false;
 }
-function sincro(clase, texto, volverEn){
-  const el = document.getElementById('sinc');
-  if(!el) return;
-  el.hidden = false;
-  el.className = 'sinc ' + (clase || '');
-  el.querySelector('b').textContent = texto;
-  clearTimeout(sincro.t);
-  if(volverEn) sincro.t = setTimeout(() => sincro('', 'Sincronizado'), volverEn);
-}
 
-/* Dónde se guardan las recetas, por orden de preferencia:
-   1. Firebase, si está configurado y has entrado con tu cuenta.
-   2. La base del artefacto de Claude, si la app se abre ahí.
-   3. El propio dispositivo.                                        */
-let nube = null;
+/* Las recetas, las fotos y las favoritas se guardan en este dispositivo. */
+async function guardarDatos(){ return escribirClave(CLAVE, datos); }
 
-async function guardarDatos(){
-  if(nube){
-    sincro('trabajando', 'Sincronizando…');
-    try{ await nube.datos(); sincro('', 'Sincronizado'); return true; }
-    catch(e){ console.error(e); sincro('aviso', 'No se ha podido sincronizar'); return false; }
-  }
-  return escribirClave(CLAVE, datos);
-}
 async function guardarFoto(id, img){
   fotos[id] = img;
-  if(nube){
-    sincro('trabajando', 'Enviando la foto…');
-    try{ await nube.foto(id, img); sincro('', 'Foto sincronizada', 4000); return true; }
-    catch(e){ console.error(e); sincro('aviso', 'La foto no se ha podido sincronizar'); return false; }
-  }
   return escribirClave(CLAVE_FOTOS, fotos);
 }
+
 async function quitarFoto(id){
   delete fotos[id];
-  if(nube){
-    sincro('trabajando', 'Sincronizando…');
-    try{ await nube.borrarFoto(id); sincro('', 'Sincronizado'); return true; }
-    catch(e){ console.error(e); sincro('aviso', 'No se ha podido sincronizar'); return false; }
-  }
   return escribirClave(CLAVE_FOTOS, fotos);
 }
 
@@ -763,197 +672,8 @@ function ordenarPropias(){
   });
 }
 
-/* Avisa cuando el cambio llega del otro aparato y no de este. */
-function llegaDeFuera(marca, clave, hayPendientes){
-  if(marca[clave]){ marca[clave] = false; return; }
-  if(!hayPendientes) sincro('', 'Actualizado desde tu otro dispositivo', 5000);
-}
 
-/* ------------------------------------------------------------------
-   Firebase
-   ------------------------------------------------------------------ */
-let fb = null;
 
-function confFirebase(){
-  if(window.FIREBASE_CONF && window.FIREBASE_CONF.apiKey) return window.FIREBASE_CONF;
-  try{
-    const t = localStorage.getItem(CLAVE_FB);
-    if(t){ const c = JSON.parse(t); if(c && c.apiKey) return c; }
-  }catch(e){}
-  return null;
-}
-
-async function esperarSDK(ms){
-  const t0 = Date.now();
-  while(!window.FBSDK && Date.now() - t0 < ms) await new Promise(r => setTimeout(r, 120));
-  return window.FBSDK || null;
-}
-
-async function conectarFirebase(){
-  const conf = confFirebase();
-  if(!conf) return false;
-  sincro('trabajando', 'Conectando con Firebase…');
-  const K = await esperarSDK(9000);
-  if(!K){ sincro('aviso', 'Firebase no ha respondido'); return false; }
-  try{
-    const app = K.initializeApp(conf);
-    const auth = K.getAuth(app);
-    const bd = K.getDatabase(app);
-    try{ await K.setPersistence(auth, K.browserLocalPersistence); }catch(e){}
-    fb = {K, app, auth, bd, uid: null};
-    return await new Promise(listo => {
-      let contestado = false;
-      K.onAuthStateChanged(auth, async u => {
-        fb.uid = u ? u.uid : null;
-        fb.correo = u ? u.email : '';
-        if(u){ await montarFirebase(); }
-        else if(nube && nube.nombre === 'firebase'){ nube = null; sincro('local', 'Sesión cerrada'); }
-        pintarSesion();
-        if(!contestado){ contestado = true; listo(!!u); }
-      });
-    });
-  }catch(e){
-    console.error(e);
-    sincro('aviso', 'La configuración de Firebase no es válida');
-    return false;
-  }
-}
-
-async function montarFirebase(){
-  const K = fb.K, bd = fb.bd, base = 'usuarios/' + fb.uid;
-  const donde = t => K.ref(bd, base + '/' + t);
-  const enviado = {};          // lo último que ha salido de este aparato
-
-  nube = {
-    nombre: 'firebase',
-    datos: async () => {
-      const p = JSON.stringify(datos.propias);
-      const f = JSON.stringify(datos.favoritos);
-      enviado.propias = p; enviado.favoritos = f;
-      await K.set(donde('propias'), {json: p});
-      await K.set(donde('favoritos'), {json: f});
-    },
-    foto: (id, img) => { enviado['foto' + id] = img; return K.set(donde('fotos/' + id), {img}); },
-    borrarFoto: id => { enviado['foto' + id] = null; return K.remove(donde('fotos/' + id)); }
-  };
-
-  // La primera vez, sube lo que ya hubiera en este dispositivo.
-  try{
-    const s0 = await K.get(donde('propias'));
-    if(!s0.exists() && datos.propias.length){
-      await nube.datos();
-      for(const id of Object.keys(fotos)) await nube.foto(id, fotos[id]);
-    }
-  }catch(e){ console.error(e); }
-
-  const marca = {propias: true, favoritos: true, fotos: true};
-  const fallo = e => { console.error(e); sincro('aviso', 'Sincronización interrumpida'); };
-  const avisar = (clave, esMio) => {
-    if(marca[clave]){ marca[clave] = false; return; }
-    if(!esMio) sincro('', 'Actualizado desde tu otro dispositivo', 5000);
-  };
-
-  K.onValue(donde('propias'), snap => {
-    const v = snap.val();
-    const txt = (v && v.json) ? v.json : '[]';
-    try{ datos.propias = JSON.parse(txt) || []; }catch(e){ datos.propias = []; }
-    ordenarPropias(); pintarRejilla();
-    avisar('propias', txt === enviado.propias);
-  }, fallo);
-
-  K.onValue(donde('favoritos'), snap => {
-    const v = snap.val();
-    const txt = (v && v.json) ? v.json : '[]';
-    try{ datos.favoritos = JSON.parse(txt) || []; }catch(e){ datos.favoritos = []; }
-    pintarRejilla();
-    avisar('favoritos', txt === enviado.favoritos);
-  }, fallo);
-
-  K.onValue(donde('fotos'), snap => {
-    const v = snap.val() || {};
-    const m = {};
-    let mias = true;
-    Object.keys(v).forEach(id => {
-      if(v[id] && v[id].img){
-        m[id] = v[id].img;
-        if(enviado['foto' + id] !== v[id].img) mias = false;
-      }
-    });
-    if(Object.keys(m).length !== Object.keys(fotos).length) mias = false;
-    fotos = m; pintarRejilla();
-    avisar('fotos', mias);
-  }, fallo);
-
-  window.addEventListener('offline', () => sincro('aviso', 'Sin conexión'));
-  window.addEventListener('online', () => sincro('', 'Sincronizado'));
-  sincro('', 'Sincronizado');
-}
-
-/* ------------------------------------------------------------------
-   Base del artefacto de Claude (cuando no hay Firebase)
-   ------------------------------------------------------------------ */
-async function conectarArtefacto(){
-  if(typeof claude === 'undefined' || !claude.use) return false;
-  let bd = null;
-  try{ bd = await claude.use('db'); }catch(e){ bd = null; }
-  if(!bd) return false;
-
-  nube = {
-    nombre: 'artefacto',
-    datos: async () => {
-      await bd.doc('datos/propias').set({lista: datos.propias});
-      await bd.doc('datos/favoritos').set({ids: datos.favoritos});
-    },
-    foto: (id, img) => bd.doc('fotos/' + id).set({img}),
-    borrarFoto: id => bd.doc('fotos/' + id).delete()
-  };
-
-  sincro('trabajando', 'Conectando…');
-  try{
-    const yaHay = await bd.doc('datos/propias').get();
-    if(!yaHay.exists && datos.propias.length){
-      await nube.datos();
-      for(const id of Object.keys(fotos)) await nube.foto(id, fotos[id]);
-    }
-  }catch(e){ console.error(e); }
-
-  const marca = {propias: true, favoritos: true, fotos: true};
-  const fallo = e => { console.error(e); sincro('aviso', 'Sincronización interrumpida'); };
-
-  bd.doc('datos/propias').onSnapshot(snap => {
-    const d = snap.exists ? snap.data() : null;
-    datos.propias = (d && Array.isArray(d.lista)) ? d.lista : [];
-    ordenarPropias(); pintarRejilla();
-    llegaDeFuera(marca, 'propias', snap.metadata.hasPendingWrites);
-  }, fallo);
-
-  bd.doc('datos/favoritos').onSnapshot(snap => {
-    const d = snap.exists ? snap.data() : null;
-    datos.favoritos = (d && Array.isArray(d.ids)) ? d.ids : [];
-    pintarRejilla();
-    llegaDeFuera(marca, 'favoritos', snap.metadata.hasPendingWrites);
-  }, fallo);
-
-  bd.collection('fotos').onSnapshot(snap => {
-    const m = {};
-    snap.docs.forEach(d => { const v = d.data(); if(v && v.img) m[d.id] = v.img; });
-    fotos = m; pintarRejilla();
-    llegaDeFuera(marca, 'fotos', snap.metadata.hasPendingWrites);
-  }, fallo);
-
-  window.addEventListener('offline', () => sincro('aviso', 'Sin conexión'));
-  window.addEventListener('online', () => sincro('', 'Sincronizado'));
-  sincro('', 'Sincronizado');
-  return true;
-}
-
-async function conectarNube(){
-  if(typeof claude !== 'undefined' && claude.use){
-    if(await conectarArtefacto()) return true;   // abierto dentro de Claude
-  }
-  if(await conectarFirebase()) return true;
-  return !!nube;
-}
 
 /* ============================================================
    3. Dibujo del plato a partir de los ingredientes
@@ -1239,7 +959,7 @@ function comprimir(archivo){
           c.height = Math.round(im.height * esc);
           c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
           salida = c.toDataURL('image/jpeg', calidad);
-          if(salida.length < 220000) break;   // cabe en la nube del artefacto
+          if(salida.length < 220000) break;   // tamaño razonable para guardar
         }
         res(salida);
       };
@@ -1363,107 +1083,6 @@ $('guardar').addEventListener('click', async () => {
 });
 
 /* ---------- copia de seguridad ---------- */
-$('sinc').addEventListener('click', () => { pintarSesion(); abrir('capaNube'); });
-$('btnCopiaCab').addEventListener('click', () => $('btnCopias').click());
-
-function pintarSesion(){
-  const conf = confFirebase();
-  const dentro = !!(fb && fb.uid);
-  const e = $('estadoNube');
-  if(!conf){
-    e.textContent = 'Firebase no está configurado en este dispositivo.'
-      + (nube && nube.nombre === 'artefacto'
-          ? ' Ahora mismo sincroniza por la nube de Claude.'
-          : ' Tus recetas se guardan solo aquí.');
-    $('zonaSesion').hidden = true;
-    $('zonaSalir').hidden = true;
-    $('zonaConf').open = true;
-  }else if(dentro){
-    e.textContent = 'Sincronizando con Firebase como ' + (fb.correo || 'tu cuenta') + '.';
-    $('zonaSesion').hidden = true;
-    $('zonaSalir').hidden = false;
-    $('zonaConf').open = false;
-  }else{
-    e.textContent = 'Firebase está configurado. Entra con tu cuenta para sincronizar.';
-    $('zonaSesion').hidden = false;
-    $('zonaSalir').hidden = true;
-    $('zonaConf').open = false;
-  }
-  try{ $('confFB').value = localStorage.getItem(CLAVE_FB) || ''; }catch(err){}
-}
-
-function fallaAuth(err){
-  const c = err && err.code ? err.code : '';
-  if(c.includes('invalid-email')) return 'Ese correo no tiene buena pinta.';
-  if(c.includes('weak-password')) return 'La contraseña necesita al menos 6 caracteres.';
-  if(c.includes('email-already-in-use')) return 'Esa cuenta ya existe: pulsa Entrar en vez de Crear.';
-  if(c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found'))
-    return 'Correo o contraseña incorrectos. Si es la primera vez, pulsa Crear la cuenta.';
-  if(c.includes('network')) return 'Sin conexión con Firebase.';
-  if(c.includes('operation-not-allowed'))
-    return 'Falta activar en Firebase el acceso por correo y contraseña.';
-  return 'No ha podido ser: ' + (err && err.message ? err.message : 'error desconocido');
-}
-
-async function entrarFirebase(crear){
-  const e = $('errorNube');
-  const correo = $('fbCorreo').value.trim();
-  const clave = $('fbClave').value;
-  if(!correo || !clave){ e.style.color = 'var(--paprika)'; e.textContent = 'Pon el correo y la contraseña.'; return; }
-  if(!fb){ e.style.color = 'var(--paprika)'; e.textContent = 'Firebase todavía no está conectado.'; return; }
-  e.style.color = 'var(--gris)';
-  e.textContent = crear ? 'Creando la cuenta…' : 'Entrando…';
-  try{
-    if(crear) await fb.K.createUserWithEmailAndPassword(fb.auth, correo, clave);
-    else await fb.K.signInWithEmailAndPassword(fb.auth, correo, clave);
-    $('fbClave').value = '';
-    e.textContent = 'Listo.';
-    setTimeout(() => cerrar('capaNube'), 700);
-  }catch(err){
-    console.error(err);
-    e.style.color = 'var(--paprika)';
-    e.textContent = fallaAuth(err);
-  }
-}
-$('fbEntrar').addEventListener('click', () => entrarFirebase(false));
-$('fbCrear').addEventListener('click', () => entrarFirebase(true));
-$('fbSalir').addEventListener('click', async () => {
-  if(!fb) return;
-  if(!confirm('Se cierra la sesión en este dispositivo. Tus recetas siguen en Firebase.')) return;
-  try{ await fb.K.signOut(fb.auth); }catch(e){ console.error(e); }
-  pintarSesion();
-});
-
-$('guardarConf').addEventListener('click', () => {
-  const e = $('errorNube');
-  try{
-    const bruto = $('confFB').value.trim()
-      .replace(/^[^{]*/, '').replace(/;?\s*$/, '')          // quita "const firebaseConfig ="
-      .replace(/([{,]\s*)([A-Za-z0-9_]+)\s*:/g, '$1"$2":') // comillas en las claves
-      .replace(/'/g, '"')
-      .replace(/,(\s*})/g, '$1');
-    const c = JSON.parse(bruto);
-    if(!c.apiKey) throw new Error('faltan datos');
-    if(!c.databaseURL){
-      e.style.color = 'var(--paprika)';
-      e.textContent = 'A esa configuración le falta databaseURL. Crea primero la Realtime Database en Firebase y vuelve a copiar el bloque.';
-      return;
-    }
-    localStorage.setItem(CLAVE_FB, JSON.stringify(c));
-    e.style.color = 'var(--gris)';
-    e.textContent = 'Guardado. Recargando para conectar…';
-    setTimeout(() => location.reload(), 900);
-  }catch(err){
-    e.style.color = 'var(--paprika)';
-    e.textContent = 'Eso no parece la configuración de Firebase. Pega el bloque entero, con sus llaves.';
-  }
-});
-$('borrarConf').addEventListener('click', () => {
-  if(!confirm('¿Quitar la configuración de Firebase de este dispositivo?')) return;
-  try{ localStorage.removeItem(CLAVE_FB); }catch(e){}
-  location.reload();
-});
-
 function paqueteCopia(){
   return JSON.stringify({
     app: 'recetario-air-fryer',
@@ -1648,41 +1267,12 @@ $('btnActualizar').addEventListener('click', async () => {
   $('version').textContent = 'Versión ' + VERSION;
   pintarRejilla();
 
-  const conectado = await conectarNube();
-  pintarSesion();
-  if(conectado){
-    $('sincro').textContent = 'Tus recetas, fotos y favoritas viajan por la nube: '
-      + 'las mismas en el ordenador y en el móvil.';
-  }else if(confFirebase()){
-    sincro('aviso', 'Entra con tu cuenta');
-    $('sincro').textContent = 'Firebase está configurado, pero falta entrar con tu cuenta.';
-  }else{
-    sincro('local', 'Guardado en este dispositivo');
-    $('sincro').textContent = 'Tus recetas, fotos y favoritas se guardan en este dispositivo.';
-  }
+  $('sincro').textContent = 'Tus recetas, tus fotos y tus favoritas se guardan en este móvil. '
+    + 'Descarga de vez en cuando la copia de seguridad.';
   const f = await leerClave(CLAVE_FOTOS);
   if(f && typeof f === 'object') fotos = f;
   pintarRejilla();
 })();
-</script>
-
-<script type="module">
-/* Solo se descarga Firebase si hay configuración. */
-const guardada = (() => {
-  try{ return JSON.parse(localStorage.getItem('recetario:firebase') || 'null'); }catch(e){ return null; }
-})();
-const conf = (window.FIREBASE_CONF && window.FIREBASE_CONF.apiKey) ? window.FIREBASE_CONF : guardada;
-if(conf && conf.apiKey && !(window.claude && window.claude.use)){
-  const V = 'https://www.gstatic.com/firebasejs/12.19.0/';
-  try{
-    const [app, auth, base] = await Promise.all([
-      import(V + 'firebase-app.js'),
-      import(V + 'firebase-auth.js'),
-      import(V + 'firebase-database.js')
-    ]);
-    window.FBSDK = Object.assign({}, app, auth, base);
-  }catch(e){ console.error('No se ha podido cargar Firebase', e); }
-}
 </script>
 </body>
 </html>
