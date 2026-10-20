@@ -289,7 +289,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '5.0 · 20-10-2026';
+const VERSION = '5.1 · 20-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1083,6 +1083,8 @@ $('guardar').addEventListener('click', async () => {
 });
 
 /* ---------- copia de seguridad ---------- */
+$('btnCopiaCab').addEventListener('click', () => abrirCopia());
+
 function paqueteCopia(){
   return JSON.stringify({
     app: 'recetario-air-fryer',
@@ -1172,13 +1174,14 @@ function resumenCopia(){
     `${datos.propias.length} receta(s) tuya(s) y ${nf} foto(s) · unos ${kb} KB`;
 }
 
-$('btnCopias').addEventListener('click', () => {
+function abrirCopia(){
   $('copiaTexto').value = JSON.stringify({propias: datos.propias, favoritos: datos.favoritos});
   $('errorCopia').textContent = '';
   $('espacio').textContent = '';
   resumenCopia();
   abrir('capaCopia');
-});
+}
+$('btnCopias').addEventListener('click', abrirCopia);
 $('copiarPortapapeles').addEventListener('click', async () => {
   const t = $('copiaTexto'); t.select();
   try{ await navigator.clipboard.writeText(t.value); }catch(e){ document.execCommand('copy'); }
