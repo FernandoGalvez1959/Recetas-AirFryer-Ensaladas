@@ -138,6 +138,20 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
 .previa img{width:120px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--linea)}
 .error{color:var(--paprika);font-size:14px;margin-top:14px;min-height:20px}
 .aviso{font-size:13px;color:var(--gris);margin-top:22px;padding-top:14px;border-top:1px solid var(--linea)}
+.crono{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:45;background:var(--oliva);color:var(--hueso);border-radius:14px;
+  padding:12px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.crono[hidden]{display:none}
+.crono b{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.crono .que{flex:1;font-size:13px;color:#BDC7B2;line-height:1.25}
+.crono button{border:0;background:var(--oliva-2);color:var(--hueso);font-weight:600;
+  border-radius:9px;padding:8px 12px;font-size:14px}
+.crono.sonando{background:var(--paprika)}
+.crono.sonando .que{color:#F3D9D2}
+.crono.sonando button{background:#8E3220}
+.btnCrono{width:100%;border:1px solid var(--linea);background:var(--papel);
+  border-radius:10px;padding:12px;font-weight:600;font-size:15px;margin-top:4px}
 .aviso-act{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
   z-index:50;background:var(--oliva);color:var(--hueso);border-radius:14px;
   padding:13px 14px;display:flex;align-items:center;gap:12px;
@@ -184,6 +198,13 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
 <button class="anadir" id="btnAnadir">+ Añadir receta</button>
 <input type="file" id="fotoRapida" accept="image/*" hidden>
 <input type="file" id="fotoCamara" accept="image/*" capture="environment" hidden>
+
+<div class="crono" id="crono" hidden>
+  <b id="cronoTiempo">00:00</b>
+  <span class="que" id="cronoQue"></span>
+  <button id="cronoPausa">Pausa</button>
+  <button id="cronoFin">Quitar</button>
+</div>
 
 <div class="aviso-act" id="banner" hidden>
   <span>Hay una versión nueva del recetario.</span>
@@ -289,7 +310,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '5.1 · 20-10-2026';
+const VERSION = '5.2 · 21-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -908,6 +929,7 @@ function abrirFicha(id){
     <h3>${escapar(r.nombre)}</h3>
     <div class="etiquetas">${r.tipos.map(t => `<span class="etq">${nombreTipo(t)}</span>`).join('')}</div>
     ${medidasDe(r)}
+    ${r.min ? `<button class="btnCrono" data-crono="${r.min}">⏱ Poner el temporizador · ${r.min} min</button>` : ''}
     <h4>Ingredientes</h4>
     <ul>${r.ing.map(i => `<li>${escapar(i)}</li>`).join('')}</ul>
     <h4>Preparación</h4>
@@ -921,6 +943,8 @@ function abrirFicha(id){
   abrir('capaFicha');
 }
 $('ficha').addEventListener('click', async e => {
+  const cr = e.target.closest('[data-crono]');
+  if(cr){ arrancarCrono(+cr.dataset.crono, (todas().find(x => x.id === fichaActual) || {}).nombre || ''); return; }
   const f = e.target.closest('[data-fav]');
   const ft = e.target.closest('[data-foto]');
   const ed = e.target.closest('[data-editar]');
@@ -979,6 +1003,114 @@ async function recibirFotoRapida(e){
 }
 $('fotoRapida').addEventListener('change', recibirFotoRapida);
 $('fotoCamara').addEventListener('change', recibirFotoRapida);
+
+/* ---------- temporizador ---------- */
+const CLAVE_CRONO = 'recetario:crono';
+let crono = {fin: 0, resto: 0, corriendo: false, nombre: '', sonando: false};
+let cronoReloj = null, cronoAudio = null, cronoLuz = null;
+
+function mmss(seg){
+  seg = Math.max(0, Math.round(seg));
+  return String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(seg % 60).padStart(2, '0');
+}
+function guardarCrono(){
+  try{
+    if(crono.fin || crono.resto) localStorage.setItem(CLAVE_CRONO, JSON.stringify(crono));
+    else localStorage.removeItem(CLAVE_CRONO);
+  }catch(e){}
+}
+function restante(){
+  return crono.corriendo ? (crono.fin - Date.now()) / 1000 : crono.resto;
+}
+function pintarCrono(){
+  const caja = $('crono');
+  if(!crono.fin && !crono.resto && !crono.sonando){ caja.hidden = true; return; }
+  caja.hidden = false;
+  caja.className = 'crono' + (crono.sonando ? ' sonando' : '');
+  $('cronoTiempo').textContent = crono.sonando ? '¡Ya!' : mmss(restante());
+  $('cronoQue').textContent = crono.sonando
+    ? (crono.nombre ? 'Listo: ' + crono.nombre : 'Tiempo cumplido')
+    : (crono.nombre || '') + (crono.corriendo ? '' : ' · en pausa');
+  $('cronoPausa').textContent = crono.sonando ? 'Callar' : (crono.corriendo ? 'Pausa' : 'Seguir');
+}
+async function pantallaDespierta(encender){
+  try{
+    if(encender && 'wakeLock' in navigator && !cronoLuz) cronoLuz = await navigator.wakeLock.request('screen');
+    if(!encender && cronoLuz){ cronoLuz.release(); cronoLuz = null; }
+  }catch(e){ cronoLuz = null; }
+}
+function latido(){
+  clearInterval(cronoReloj);
+  cronoReloj = setInterval(() => {
+    if(crono.corriendo && restante() <= 0) sonarCrono();
+    else pintarCrono();
+  }, 500);
+}
+function arrancarCrono(min, nombre){
+  callarCrono();
+  crono = {fin: Date.now() + min * 60000, resto: 0, corriendo: true, nombre, sonando: false};
+  try{ cronoAudio = cronoAudio || new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+  if(cronoAudio && cronoAudio.state === 'suspended') cronoAudio.resume();
+  guardarCrono(); pintarCrono(); latido(); pantallaDespierta(true);
+  cerrar('capaFicha');
+}
+function pitar(){
+  if(!cronoAudio) return;
+  const t0 = cronoAudio.currentTime;
+  [0, 0.45, 0.9].forEach(d => {
+    const o = cronoAudio.createOscillator(), g = cronoAudio.createGain();
+    o.type = 'sine'; o.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, t0 + d);
+    g.gain.exponentialRampToValueAtTime(0.5, t0 + d + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.32);
+    o.connect(g); g.connect(cronoAudio.destination);
+    o.start(t0 + d); o.stop(t0 + d + 0.35);
+  });
+}
+let cronoAviso = null;
+function sonarCrono(){
+  if(crono.sonando) return;
+  crono = {fin: 0, resto: 0, corriendo: false, nombre: crono.nombre, sonando: true};
+  guardarCrono(); pintarCrono();
+  clearInterval(cronoReloj);
+  pitar();
+  try{ navigator.vibrate && navigator.vibrate([500, 250, 500, 250, 800]); }catch(e){}
+  cronoAviso = setInterval(() => {
+    pitar();
+    try{ navigator.vibrate && navigator.vibrate([500, 250, 500]); }catch(e){}
+  }, 4000);
+  setTimeout(callarCrono, 60000);
+}
+function callarCrono(){
+  clearInterval(cronoAviso); cronoAviso = null;
+  clearInterval(cronoReloj); cronoReloj = null;
+  crono = {fin: 0, resto: 0, corriendo: false, nombre: '', sonando: false};
+  pantallaDespierta(false);
+  guardarCrono(); pintarCrono();
+}
+$('cronoPausa').addEventListener('click', () => {
+  if(crono.sonando){ callarCrono(); return; }
+  if(crono.corriendo){
+    crono.resto = restante(); crono.corriendo = false; crono.fin = 0;
+    pantallaDespierta(false);
+  }else{
+    crono.fin = Date.now() + crono.resto * 1000; crono.resto = 0; crono.corriendo = true;
+    pantallaDespierta(true); latido();
+  }
+  guardarCrono(); pintarCrono();
+});
+$('cronoFin').addEventListener('click', callarCrono);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) pintarCrono(); });
+
+function recuperarCrono(){
+  let g = null;
+  try{ g = JSON.parse(localStorage.getItem(CLAVE_CRONO) || 'null'); }catch(e){}
+  if(!g) return;
+  crono = g; crono.sonando = false;
+  if(crono.corriendo && restante() <= 0){ callarCrono(); return; }
+  pintarCrono();
+  if(crono.corriendo) latido();
+}
 
 /* ---------- capas ---------- */
 function abrir(id){ $(id).hidden = false; document.body.style.overflow = 'hidden'; }
@@ -1275,6 +1407,7 @@ $('btnActualizar').addEventListener('click', async () => {
   const f = await leerClave(CLAVE_FOTOS);
   if(f && typeof f === 'object') fotos = f;
   pintarRejilla();
+  recuperarCrono();
 })();
 </script>
 </body>
