@@ -173,6 +173,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
   <p class="sub"><span id="total">—</span> recetas con temperatura y tiempo listos para el cesto.</p>
   <div class="barraEstado">
     <button class="sinc" id="btnCopiaCab"><i class="guardar"></i><b>Copia de seguridad</b></button>
+    <button class="sinc" id="btnProbar"><i class="guardar"></i><b>Probar el aviso</b></button>
   </div>
   <div class="buscador">
     <input id="busca" type="text" placeholder="Buscar receta o ingrediente" aria-label="Buscar receta o ingrediente" autocomplete="off">
@@ -310,7 +311,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '5.2 · 21-10-2026';
+const VERSION = '5.3 · 21-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1056,17 +1057,32 @@ function arrancarCrono(min, nombre){
 }
 function pitar(){
   if(!cronoAudio) return;
+  if(cronoAudio.state === 'suspended') cronoAudio.resume();
+
+  // Limitador: permite subir el volumen sin que el altavoz distorsione.
+  const tope = cronoAudio.createDynamicsCompressor();
+  tope.threshold.value = -8; tope.knee.value = 0; tope.ratio.value = 20;
+  tope.attack.value = 0.003; tope.release.value = 0.1;
+  tope.connect(cronoAudio.destination);
+
   const t0 = cronoAudio.currentTime;
-  [0, 0.45, 0.9].forEach(d => {
-    const o = cronoAudio.createOscillator(), g = cronoAudio.createGain();
-    o.type = 'sine'; o.frequency.value = 880;
-    g.gain.setValueAtTime(0.0001, t0 + d);
-    g.gain.exponentialRampToValueAtTime(0.5, t0 + d + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.32);
-    o.connect(g); g.connect(cronoAudio.destination);
-    o.start(t0 + d); o.stop(t0 + d + 0.35);
+  const pulsos = [0, 0.4, 0.8, 1.2, 1.6, 2.0];     // seis avisos seguidos
+  pulsos.forEach((d, i) => {
+    const agudo = i % 2 === 0;
+    const base = agudo ? 1100 : 1500;              // franja en la que mejor se oye
+    [[base, 'square', 0.8], [base * 2, 'sine', 0.35]].forEach(([hz, tipo, vol]) => {
+      const o = cronoAudio.createOscillator(), g = cronoAudio.createGain();
+      o.type = tipo; o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t0 + d);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + d + 0.01);
+      g.gain.setValueAtTime(vol, t0 + d + 0.26);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.3);
+      o.connect(g); g.connect(tope);
+      o.start(t0 + d); o.stop(t0 + d + 0.32);
+    });
   });
 }
+
 let cronoAviso = null;
 function sonarCrono(){
   if(crono.sonando) return;
@@ -1077,9 +1093,9 @@ function sonarCrono(){
   try{ navigator.vibrate && navigator.vibrate([500, 250, 500, 250, 800]); }catch(e){}
   cronoAviso = setInterval(() => {
     pitar();
-    try{ navigator.vibrate && navigator.vibrate([500, 250, 500]); }catch(e){}
-  }, 4000);
-  setTimeout(callarCrono, 60000);
+    try{ navigator.vibrate && navigator.vibrate([600, 200, 600, 200, 600]); }catch(e){}
+  }, 2800);
+  setTimeout(callarCrono, 120000);
 }
 function callarCrono(){
   clearInterval(cronoAviso); cronoAviso = null;
@@ -1216,6 +1232,11 @@ $('guardar').addEventListener('click', async () => {
 
 /* ---------- copia de seguridad ---------- */
 $('btnCopiaCab').addEventListener('click', () => abrirCopia());
+$('btnProbar').addEventListener('click', () => {
+  try{ cronoAudio = cronoAudio || new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+  pitar();
+  try{ navigator.vibrate && navigator.vibrate([600, 200, 600]); }catch(e){}
+});
 
 function paqueteCopia(){
   return JSON.stringify({
