@@ -270,6 +270,27 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
   </div>
 </div>
 
+<div class="capa" id="capaAjuste" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloAjuste">
+    <header>
+      <h2 id="tituloAjuste">Ajustar a mi freidora</h2>
+      <button class="cerrar" data-cerrar="capaAjuste" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="contenido">
+      <p class="pista" style="margin-top:0">Cada freidora es de su padre y de su madre. Pon aquí los grados y los minutos que a ti te funcionan y la receta se queda así para siempre.</p>
+      <p class="pista" id="ajQue" style="color:var(--tinta);font-weight:600"></p>
+      <label for="ajTemp">Temperatura (°C)</label>
+      <input id="ajTemp" type="number" min="60" max="240" step="5">
+      <div id="ajTiempos"></div>
+      <p class="error" id="ajError" role="alert"></p>
+      <div class="acciones">
+        <button class="btn principal" id="ajGuardar">Guardar</button>
+        <button class="btn" id="ajOriginal">Volver a lo original</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="capa" id="capaCopia" hidden>
   <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloCopia">
     <header>
@@ -311,7 +332,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '5.3 · 21-10-2026';
+const VERSION = '6.0 · 23-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -651,8 +672,10 @@ const RECETAS = CRUDO.split('\n').filter(l => l.trim()).map((linea, i) => {
    ============================================================ */
 const CLAVE = 'recetario:v2';
 const CLAVE_FOTOS = 'recetario:fotos';
+const CLAVE_AJUSTES = 'recetario:ajustes';
 let datos = { propias: [], favoritos: [] };
 let fotos = {};
+let ajustes = {};
 
 async function leerClave(k){
   try{
@@ -677,6 +700,46 @@ async function escribirClave(k, valor){
 
 /* Las recetas, las fotos y las favoritas se guardan en este dispositivo. */
 async function guardarDatos(){ return escribirClave(CLAVE, datos); }
+async function guardarAjustes(){ return escribirClave(CLAVE_AJUSTES, ajustes); }
+
+/* Devuelve la receta con los grados y tiempos que haya puesto el usuario. */
+function conAjustes(r){
+  const a = ajustes[r.id];
+  if(!a) return r;
+  const x = Object.assign({}, r);
+  if(a.temp !== undefined) x.temp = a.temp;
+  if(a.min !== undefined) x.min = a.min;
+  if(a.etapas) x.etapas = a.etapas;
+  x.ajustada = true;
+  return x;
+}
+
+/* Parte la receta en tandas: "15 minutos, dar la vuelta y 10 minutos más".
+   Los tiempos de remojo, marinado o reposo no cuentan. */
+function etapasDe(r){
+  if(r.etapas && r.etapas.length) return r.etapas;
+  const fuera = /(precalient|precalent|marina|reposa|reposar|repose|deja|déjal|dejar|nevera|agua|remoj|enfri|enfrí|templar|escurr|congelador|desala|infusiona|mojar)/i;
+  const halladas = [];
+
+  (r.pasos || []).forEach(paso => {
+    const tempPaso = paso.match(/(\d+)\s*°C/);
+    const cocina = /°C/.test(paso) || /(cocina|cocínal|sigue|termina|gratina|hornea|asa\b|dale|dales)/i.test(paso);
+    if(!cocina) return;
+    for(const m of paso.matchAll(/(\d+)\s*minutos?/gi)){
+      const antes = paso.slice(Math.max(0, m.index - 45), m.index);
+      if(fuera.test(antes)) continue;                       // remojo, reposo, nevera...
+      if(/cada\s*$/i.test(antes) || /mitad|cada/i.test(antes.slice(-12))) continue;  // "agitando cada 5 minutos"
+      const despues = paso.slice(m.index);
+      const t = despues.match(/(\d+)\s*°C/) || tempPaso;
+      halladas.push({min: +m[1], temp: t ? +t[1] : null, texto: paso});
+    }
+  });
+
+  const suma = halladas.reduce((a, e) => a + e.min, 0);
+  if(halladas.length > 1 && r.min && suma >= r.min * 0.85 && suma <= r.min * 1.15) return halladas;
+  return r.min ? [{min: r.min, temp: r.temp || null, texto: ''}] : [];
+}
+
 
 async function guardarFoto(id, img){
   fotos[id] = img;
@@ -889,7 +952,8 @@ function pintarRejilla(){
     $('vacioTexto').textContent = texto ? `Nada coincide con «${texto}».` : 'No hay recetas con esos filtros.';
     return;
   }
-  $('rejilla').innerHTML = visibles.map(r => {
+  $('rejilla').innerHTML = visibles.map(r0 => {
+    const r = conAjustes(r0);
     const fav = datos.favoritos.includes(r.id);
     const f = fotoDe(r);
     const img = f ? `<img class="foto" src="${f}" alt="${escapar(r.nombre)}">` : dibujarPlato(r, 'foto');
@@ -914,8 +978,9 @@ $('verMas').addEventListener('click', () => { tope += PASO; pintarRejilla(); });
 /* ---------- ficha ---------- */
 let fichaActual = null;
 function abrirFicha(id){
-  const r = todas().find(x => x.id === id);
-  if(!r) return;
+  const base = todas().find(x => x.id === id);
+  if(!base) return;
+  const r = conAjustes(base);
   fichaActual = id;
   const fav = datos.favoritos.includes(r.id);
   const f = fotoDe(r);
@@ -930,7 +995,8 @@ function abrirFicha(id){
     <h3>${escapar(r.nombre)}</h3>
     <div class="etiquetas">${r.tipos.map(t => `<span class="etq">${nombreTipo(t)}</span>`).join('')}</div>
     ${medidasDe(r)}
-    ${r.min ? `<button class="btnCrono" data-crono="${r.min}">⏱ Poner el temporizador · ${r.min} min</button>` : ''}
+    ${r.min ? `<button class="btnCrono" data-crono="1">⏱ Poner el temporizador · ${etapasDe(r).map(e => e.min).join(' + ')} min</button>` : ''}
+    <button class="btnCrono" data-ajustar="1">✎ Ajustar a mi freidora${r.ajustada ? ' (ajustada)' : ''}</button>
     <h4>Ingredientes</h4>
     <ul>${r.ing.map(i => `<li>${escapar(i)}</li>`).join('')}</ul>
     <h4>Preparación</h4>
@@ -945,7 +1011,9 @@ function abrirFicha(id){
 }
 $('ficha').addEventListener('click', async e => {
   const cr = e.target.closest('[data-crono]');
-  if(cr){ arrancarCrono(+cr.dataset.crono, (todas().find(x => x.id === fichaActual) || {}).nombre || ''); return; }
+  if(cr){ arrancarCrono(conAjustes(todas().find(x => x.id === fichaActual))); return; }
+  const aj = e.target.closest('[data-ajustar]');
+  if(aj){ abrirAjuste(); return; }
   const f = e.target.closest('[data-fav]');
   const ft = e.target.closest('[data-foto]');
   const ed = e.target.closest('[data-editar]');
@@ -1005,35 +1073,101 @@ async function recibirFotoRapida(e){
 $('fotoRapida').addEventListener('change', recibirFotoRapida);
 $('fotoCamara').addEventListener('change', recibirFotoRapida);
 
+/* ---------- ajustar grados y tiempos ---------- */
+function abrirAjuste(){
+  const base = todas().find(x => x.id === fichaActual);
+  if(!base) return;
+  const r = conAjustes(base);
+  const et = etapasDe(r);
+  $('ajQue').textContent = r.nombre;
+  $('ajTemp').value = r.temp || '';
+  $('ajError').textContent = '';
+  $('ajTiempos').innerHTML = et.length
+    ? et.map((e, i) => `<label for="ajT${i}">${et.length > 1 ? 'Tiempo ' + (i+1) : 'Tiempo'} (min)${e.texto ? ' · ' + escapar(e.texto.slice(0, 60)) : ''}</label>
+        <input id="ajT${i}" type="number" min="1" max="180" value="${e.min}">` ).join('')
+    : '<label for="ajT0">Tiempo (min)</label><input id="ajT0" type="number" min="1" max="180" placeholder="vacío si es fría">';
+  abrir('capaAjuste');
+}
+
+$('ajGuardar').addEventListener('click', async () => {
+  const base = todas().find(x => x.id === fichaActual);
+  if(!base) return;
+  const r = conAjustes(base);
+  const et = etapasDe(r);
+  const temp = parseInt($('ajTemp').value, 10) || null;
+  if(temp && (temp < 60 || temp > 240)){
+    $('ajError').textContent = 'La temperatura debe estar entre 60 y 240 °C.'; return;
+  }
+  const nuevas = [];
+  const cuantas = Math.max(1, et.length);
+  for(let i = 0; i < cuantas; i++){
+    const v = parseInt(($('ajT' + i) || {}).value, 10);
+    if(v > 0) nuevas.push({min: v, temp: (et[i] && et[i].temp) || temp, texto: (et[i] && et[i].texto) || ''});
+  }
+  const suma = nuevas.reduce((a, e) => a + e.min, 0);
+  ajustes[base.id] = {temp, min: suma || null, etapas: nuevas.length ? nuevas : null};
+  await guardarAjustes();
+  cerrar('capaAjuste');
+  pintarRejilla();
+  abrirFicha(base.id);
+});
+
+$('ajOriginal').addEventListener('click', async () => {
+  const base = todas().find(x => x.id === fichaActual);
+  if(!base) return;
+  delete ajustes[base.id];
+  await guardarAjustes();
+  cerrar('capaAjuste');
+  pintarRejilla();
+  abrirFicha(base.id);
+});
+
 /* ---------- temporizador ---------- */
 const CLAVE_CRONO = 'recetario:crono';
-let crono = {fin: 0, resto: 0, corriendo: false, nombre: '', sonando: false};
-let cronoReloj = null, cronoAudio = null, cronoLuz = null;
+let crono = {etapas: [], i: 0, fin: 0, resto: 0, corriendo: false,
+             nombre: '', sonando: false, esperando: false};
+let cronoReloj = null, cronoAudio = null, cronoLuz = null, cronoAviso = null;
 
 function mmss(seg){
   seg = Math.max(0, Math.round(seg));
   return String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(seg % 60).padStart(2, '0');
 }
+function hayCrono(){ return crono.fin || crono.resto || crono.sonando; }
 function guardarCrono(){
   try{
-    if(crono.fin || crono.resto) localStorage.setItem(CLAVE_CRONO, JSON.stringify(crono));
+    if(hayCrono()) localStorage.setItem(CLAVE_CRONO, JSON.stringify(crono));
     else localStorage.removeItem(CLAVE_CRONO);
   }catch(e){}
 }
-function restante(){
-  return crono.corriendo ? (crono.fin - Date.now()) / 1000 : crono.resto;
-}
+function restante(){ return crono.corriendo ? (crono.fin - Date.now()) / 1000 : crono.resto; }
+function etapaActual(){ return crono.etapas[crono.i] || null; }
+
 function pintarCrono(){
   const caja = $('crono');
-  if(!crono.fin && !crono.resto && !crono.sonando){ caja.hidden = true; return; }
+  if(!hayCrono()){ caja.hidden = true; return; }
   caja.hidden = false;
   caja.className = 'crono' + (crono.sonando ? ' sonando' : '');
-  $('cronoTiempo').textContent = crono.sonando ? '¡Ya!' : mmss(restante());
-  $('cronoQue').textContent = crono.sonando
-    ? (crono.nombre ? 'Listo: ' + crono.nombre : 'Tiempo cumplido')
-    : (crono.nombre || '') + (crono.corriendo ? '' : ' · en pausa');
-  $('cronoPausa').textContent = crono.sonando ? 'Callar' : (crono.corriendo ? 'Pausa' : 'Seguir');
+  const total = crono.etapas.length;
+  const tanda = total > 1 ? ` (tanda ${crono.i + 1} de ${total})` : '';
+
+  if(crono.sonando && crono.esperando){
+    const sig = crono.etapas[crono.i + 1] || {};
+    $('cronoTiempo').textContent = '¡Ya!';
+    $('cronoQue').innerHTML = (sig.texto ? escapar(sig.texto) : 'Siguiente tanda')
+      + `<br><b style="font-size:13px">Ahora ${sig.min} min${sig.temp ? ' a ' + sig.temp + '°C' : ''}</b>`;
+  }else if(crono.sonando){
+    $('cronoTiempo').textContent = '¡Ya!';
+    $('cronoQue').textContent = crono.nombre ? 'Listo: ' + crono.nombre : 'Tiempo cumplido';
+  }else{
+    const e = etapaActual() || {};
+    $('cronoTiempo').textContent = mmss(restante());
+    $('cronoQue').textContent = (crono.nombre || '') + tanda
+      + (e.temp ? ' · ' + e.temp + '°C' : '') + (crono.corriendo ? '' : ' · en pausa');
+  }
+  $('cronoPausa').textContent = crono.esperando ? 'Seguir'
+    : (crono.sonando ? 'Callar' : (crono.corriendo ? 'Pausa' : 'Seguir'));
 }
+
 async function pantallaDespierta(encender){
   try{
     if(encender && 'wakeLock' in navigator && !cronoLuz) cronoLuz = await navigator.wakeLock.request('screen');
@@ -1043,33 +1177,54 @@ async function pantallaDespierta(encender){
 function latido(){
   clearInterval(cronoReloj);
   cronoReloj = setInterval(() => {
-    if(crono.corriendo && restante() <= 0) sonarCrono();
+    if(crono.corriendo && restante() <= 0) acabaEtapa();
     else pintarCrono();
   }, 500);
 }
-function arrancarCrono(min, nombre){
-  callarCrono();
-  crono = {fin: Date.now() + min * 60000, resto: 0, corriendo: true, nombre, sonando: false};
+function despertarAudio(){
   try{ cronoAudio = cronoAudio || new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
   if(cronoAudio && cronoAudio.state === 'suspended') cronoAudio.resume();
+}
+
+function arrancarCrono(r){
+  if(!r) return;
+  const etapas = etapasDe(r);
+  if(!etapas.length) return;
+  callarCrono();
+  crono = {etapas, i: 0, fin: Date.now() + etapas[0].min * 60000, resto: 0,
+           corriendo: true, nombre: r.nombre, sonando: false, esperando: false};
+  despertarAudio();
   guardarCrono(); pintarCrono(); latido(); pantallaDespierta(true);
   cerrar('capaFicha');
 }
+function siguienteEtapa(){
+  clearInterval(cronoAviso); cronoAviso = null;
+  crono.i += 1;
+  crono.sonando = false; crono.esperando = false;
+  crono.corriendo = true; crono.resto = 0;
+  crono.fin = Date.now() + crono.etapas[crono.i].min * 60000;
+  guardarCrono(); pintarCrono(); latido(); pantallaDespierta(true);
+}
+function acabaEtapa(){
+  if(crono.sonando) return;
+  clearInterval(cronoReloj); cronoReloj = null;
+  const quedan = crono.i < crono.etapas.length - 1;
+  crono.corriendo = false; crono.fin = 0; crono.resto = 0;
+  crono.sonando = true; crono.esperando = quedan;
+  guardarCrono(); pintarCrono();
+  avisar(quedan);
+}
+
 function pitar(){
   if(!cronoAudio) return;
   if(cronoAudio.state === 'suspended') cronoAudio.resume();
-
-  // Limitador: permite subir el volumen sin que el altavoz distorsione.
   const tope = cronoAudio.createDynamicsCompressor();
   tope.threshold.value = -8; tope.knee.value = 0; tope.ratio.value = 20;
   tope.attack.value = 0.003; tope.release.value = 0.1;
   tope.connect(cronoAudio.destination);
-
   const t0 = cronoAudio.currentTime;
-  const pulsos = [0, 0.4, 0.8, 1.2, 1.6, 2.0];     // seis avisos seguidos
-  pulsos.forEach((d, i) => {
-    const agudo = i % 2 === 0;
-    const base = agudo ? 1100 : 1500;              // franja en la que mejor se oye
+  [0, 0.4, 0.8, 1.2, 1.6, 2.0].forEach((d, i) => {
+    const base = i % 2 === 0 ? 1100 : 1500;
     [[base, 'square', 0.8], [base * 2, 'sine', 0.35]].forEach(([hz, tipo, vol]) => {
       const o = cronoAudio.createOscillator(), g = cronoAudio.createGain();
       o.type = tipo; o.frequency.value = hz;
@@ -1082,29 +1237,29 @@ function pitar(){
     });
   });
 }
-
-let cronoAviso = null;
-function sonarCrono(){
-  if(crono.sonando) return;
-  crono = {fin: 0, resto: 0, corriendo: false, nombre: crono.nombre, sonando: true};
-  guardarCrono(); pintarCrono();
-  clearInterval(cronoReloj);
+function avisar(intermedio){
   pitar();
-  try{ navigator.vibrate && navigator.vibrate([500, 250, 500, 250, 800]); }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([600, 200, 600, 200, 600]); }catch(e){}
+  clearInterval(cronoAviso);
   cronoAviso = setInterval(() => {
     pitar();
-    try{ navigator.vibrate && navigator.vibrate([600, 200, 600, 200, 600]); }catch(e){}
+    try{ navigator.vibrate && navigator.vibrate([600, 200, 600]); }catch(e){}
   }, 2800);
-  setTimeout(callarCrono, 120000);
+  // En las tandas intermedias insiste hasta que vuelvas; al final, dos minutos.
+  if(!intermedio) setTimeout(callarCrono, 120000);
+  else setTimeout(() => { clearInterval(cronoAviso); cronoAviso = null; }, 180000);
 }
 function callarCrono(){
   clearInterval(cronoAviso); cronoAviso = null;
   clearInterval(cronoReloj); cronoReloj = null;
-  crono = {fin: 0, resto: 0, corriendo: false, nombre: '', sonando: false};
+  crono = {etapas: [], i: 0, fin: 0, resto: 0, corriendo: false,
+           nombre: '', sonando: false, esperando: false};
   pantallaDespierta(false);
   guardarCrono(); pintarCrono();
 }
+
 $('cronoPausa').addEventListener('click', () => {
+  if(crono.esperando){ despertarAudio(); siguienteEtapa(); return; }
   if(crono.sonando){ callarCrono(); return; }
   if(crono.corriendo){
     crono.resto = restante(); crono.corriendo = false; crono.fin = 0;
@@ -1121,9 +1276,9 @@ document.addEventListener('visibilitychange', () => { if(!document.hidden) pinta
 function recuperarCrono(){
   let g = null;
   try{ g = JSON.parse(localStorage.getItem(CLAVE_CRONO) || 'null'); }catch(e){}
-  if(!g) return;
-  crono = g; crono.sonando = false;
-  if(crono.corriendo && restante() <= 0){ callarCrono(); return; }
+  if(!g || !g.etapas) return;
+  crono = g;
+  if(crono.corriendo && restante() <= 0){ crono.corriendo = false; acabaEtapa(); return; }
   pintarCrono();
   if(crono.corriendo) latido();
 }
@@ -1425,6 +1580,8 @@ $('btnActualizar').addEventListener('click', async () => {
 
   $('sincro').textContent = 'Tus recetas, tus fotos y tus favoritas se guardan en este móvil. '
     + 'Descarga de vez en cuando la copia de seguridad.';
+  const a = await leerClave(CLAVE_AJUSTES);
+  if(a && typeof a === 'object') ajustes = a;
   const f = await leerClave(CLAVE_FOTOS);
   if(f && typeof f === 'object') fotos = f;
   pintarRejilla();
