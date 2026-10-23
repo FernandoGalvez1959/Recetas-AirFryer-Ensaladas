@@ -125,7 +125,8 @@ input[type=text],input[type=password],input[type=number],select,textarea{width:1
   border:1px solid var(--linea);border-radius:10px;padding:11px 12px}
 textarea{min-height:104px;resize:vertical;line-height:1.45}
 .pista{font-size:13px;color:var(--gris);font-weight:400;margin-top:4px}
-.dos{display:flex;gap:10px}
+.dos{display:flex;gap:10px;align-items:center}
+.filaT + .filaT{margin-top:4px}
 .dos>div{flex:1}
 .opciones{display:flex;flex-wrap:wrap;gap:8px}
 .opciones label{margin:0;font-weight:500;font-size:14px;border:1px solid var(--linea);
@@ -281,6 +282,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
       <p class="pista" id="ajQue" style="color:var(--tinta);font-weight:600"></p>
       <label for="ajTemp">Temperatura (°C)</label>
       <input id="ajTemp" type="number" min="60" max="240" step="5">
+      <p class="pista" style="margin-top:14px">Si la receta se hace en dos tandas, pon cada una por separado con <b>+ Añadir otra tanda</b>. También puedes escribir <b>12+10</b> en una sola casilla.</p>
       <div id="ajTiempos"></div>
       <p class="error" id="ajError" role="alert"></p>
       <div class="acciones">
@@ -332,7 +334,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '6.0 · 23-10-2026';
+const VERSION = '6.1 · 23-10-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1074,38 +1076,76 @@ $('fotoRapida').addEventListener('change', recibirFotoRapida);
 $('fotoCamara').addEventListener('change', recibirFotoRapida);
 
 /* ---------- ajustar grados y tiempos ---------- */
+function filaTiempo(i, valor, texto, total){
+  return `<div class="filaT" data-fila="${i}">
+    <label for="ajT${i}">${total > 1 ? 'Tiempo ' + (i + 1) : 'Tiempo'} (min)${texto ? ' · ' + escapar(texto.slice(0, 55)) : ''}</label>
+    <div class="dos">
+      <input id="ajT${i}" type="text" inputmode="numeric" value="${valor || ''}" placeholder="15">
+      <button class="btn" data-quitarT="${i}" style="flex:0 0 auto">Quitar</button>
+    </div>
+  </div>`;
+}
+function pintarTiempos(lista){
+  $('ajTiempos').innerHTML = lista.map((e, i) => filaTiempo(i, e.min, e.texto, lista.length)).join('')
+    + '<button class="btn" id="ajMas" style="width:100%;margin-top:12px">+ Añadir otra tanda</button>';
+  $('ajMas').addEventListener('click', () => {
+    const actuales = leerTiempos(true);
+    actuales.push({min: '', texto: ''});
+    pintarTiempos(actuales);
+  });
+  $('ajTiempos').querySelectorAll('[data-quitarT]').forEach(b => {
+    b.addEventListener('click', () => {
+      const actuales = leerTiempos(true);
+      if(actuales.length <= 1){ pintarTiempos([{min: '', texto: ''}]); return; }
+      actuales.splice(+b.dataset.quitart, 1);
+      pintarTiempos(actuales);
+    });
+  });
+}
+/* Lee las casillas. Admite escribir "12+10" en una sola. */
+function leerTiempos(enBruto){
+  const filas = [...$('ajTiempos').querySelectorAll('input')];
+  const salida = [];
+  filas.forEach((inp, i) => {
+    const texto = (inp.value || '').trim();
+    if(enBruto){ salida.push({min: texto, texto: (ajusteEtapas[i] || {}).texto || ''}); return; }
+    texto.split(/[^0-9]+/).filter(Boolean).forEach(trozo => {
+      const n = parseInt(trozo, 10);
+      if(n > 0 && n <= 300) salida.push({min: n, texto: (ajusteEtapas[i] || {}).texto || ''});
+    });
+  });
+  return salida;
+}
+
+let ajusteEtapas = [];
+
 function abrirAjuste(){
   const base = todas().find(x => x.id === fichaActual);
   if(!base) return;
   const r = conAjustes(base);
-  const et = etapasDe(r);
+  ajusteEtapas = etapasDe(r);
   $('ajQue').textContent = r.nombre;
   $('ajTemp').value = r.temp || '';
   $('ajError').textContent = '';
-  $('ajTiempos').innerHTML = et.length
-    ? et.map((e, i) => `<label for="ajT${i}">${et.length > 1 ? 'Tiempo ' + (i+1) : 'Tiempo'} (min)${e.texto ? ' · ' + escapar(e.texto.slice(0, 60)) : ''}</label>
-        <input id="ajT${i}" type="number" min="1" max="180" value="${e.min}">` ).join('')
-    : '<label for="ajT0">Tiempo (min)</label><input id="ajT0" type="number" min="1" max="180" placeholder="vacío si es fría">';
+  pintarTiempos(ajusteEtapas.length ? ajusteEtapas : [{min: '', texto: ''}]);
   abrir('capaAjuste');
 }
 
 $('ajGuardar').addEventListener('click', async () => {
   const base = todas().find(x => x.id === fichaActual);
   if(!base) return;
-  const r = conAjustes(base);
-  const et = etapasDe(r);
   const temp = parseInt($('ajTemp').value, 10) || null;
   if(temp && (temp < 60 || temp > 240)){
-    $('ajError').textContent = 'La temperatura debe estar entre 60 y 240 °C.'; return;
+    $('ajError').style.color = 'var(--paprika)';
+    $('ajError').textContent = 'La temperatura debe estar entre 60 y 240 °C.';
+    return;
   }
-  const nuevas = [];
-  const cuantas = Math.max(1, et.length);
-  for(let i = 0; i < cuantas; i++){
-    const v = parseInt(($('ajT' + i) || {}).value, 10);
-    if(v > 0) nuevas.push({min: v, temp: (et[i] && et[i].temp) || temp, texto: (et[i] && et[i].texto) || ''});
-  }
-  const suma = nuevas.reduce((a, e) => a + e.min, 0);
-  ajustes[base.id] = {temp, min: suma || null, etapas: nuevas.length ? nuevas : null};
+  const tandas = leerTiempos(false);
+  if(!tandas.length && !confirm('No has puesto ningún tiempo. ¿Es una receta fría, sin freidora?')) return;
+
+  tandas.forEach(t => { if(!t.temp) t.temp = temp; });
+  const suma = tandas.reduce((a, e) => a + e.min, 0);
+  ajustes[base.id] = {temp, min: suma || null, etapas: tandas.length ? tandas : null};
   await guardarAjustes();
   cerrar('capaAjuste');
   pintarRejilla();
