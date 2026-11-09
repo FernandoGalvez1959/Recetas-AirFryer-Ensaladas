@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recetario Air Fryer y Ensaladas</title>
+<meta name="theme-color" content="#2E3A26">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-512.png">
+<style>
+:root{
+  --oliva:#2E3A26; --oliva-2:#44553A;
+  --hueso:#F6F2E8; --papel:#FFFDF8;
+  --paprika:#A83B22; --mostaza:#D9A227;
+  --tinta:#1B1A17; --gris:#6E6A60; --linea:#E2DCCC;
+  --radio:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--hueso);color:var(--tinta);
+  font-family:"Archivo",Roboto,"Helvetica Neue",system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--mostaza);outline-offset:2px}
+
+.panel{background:var(--oliva);color:var(--hueso);padding:18px 16px 14px;
+  position:sticky;top:0;z-index:20;padding-top:calc(18px + env(safe-area-inset-top))}
+.panel h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
+.panel .sub{margin:4px 0 12px;font-size:13px;color:#BDC7B2}
+.barraEstado{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 11px}
+.sinc{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  background:var(--oliva-2);border:1px solid #5B6E4E;border-radius:999px;
+  padding:5px 12px 5px 10px;font-size:13px;color:#D6DCCB}
+.sinc i{width:9px;height:9px;border-radius:50%;background:var(--mostaza);flex:0 0 auto}
+.buscador{position:relative;display:flex;align-items:center}
+.buscador input{width:100%;background:var(--papel);border:1px solid var(--linea);
+  border-radius:999px;padding:11px 40px 11px 16px;color:#111}
+.buscador input::placeholder{color:#8A857A}
+.buscador .limpiar{position:absolute;right:6px;background:none;border:0;color:var(--gris);
+  font-size:20px;line-height:1;padding:6px 10px;border-radius:999px}
+
+.filtros{background:var(--papel);border-bottom:1px solid var(--linea)}
+.fila{display:flex;flex-wrap:wrap;gap:7px;padding:12px 16px}
+.fila.tipos{padding-top:10px;padding-bottom:14px;border-top:1px dashed var(--linea)}
+.fila .rotulo{flex:0 0 100%;font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--gris);margin:0 0 2px}
+.chip{border:1px solid var(--linea);background:var(--papel);color:var(--gris);
+  border-radius:999px;padding:7px 13px;font-size:14px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--oliva);border-color:var(--oliva);color:var(--hueso)}
+.fila.tipos .chip[aria-pressed="true"]{background:var(--paprika);border-color:var(--paprika)}
+.chip.fav[aria-pressed="true"]{background:var(--mostaza);border-color:var(--mostaza);color:#3B2C00}
+
+main{padding:16px 16px 110px;max-width:1100px;margin:0 auto}
+.cuenta{font-size:13px;color:var(--gris);margin:0 0 12px}
+.rejilla{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:560px){.rejilla{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.rejilla{grid-template-columns:repeat(3,1fr)}}
+.tarjeta{background:var(--papel);border:1px solid var(--linea);border-radius:var(--radio);
+  overflow:hidden;text-align:left;padding:0;width:100%;display:flex;flex-direction:column}
+.tarjeta .foto{display:block;width:100%;aspect-ratio:20/13;object-fit:cover;background:#EDE7D8}
+.tarjeta svg.foto{height:auto}
+.tarjeta .cuerpo{padding:12px 14px 14px}
+.tarjeta h3{margin:0 0 8px;font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.lectura{display:flex;align-items:baseline;gap:14px;border-top:1px dashed var(--linea);padding-top:9px;margin-top:9px}
+.lectura b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.lectura span{font-size:12px;color:var(--gris);margin-left:3px}
+.etiquetas{display:flex;flex-wrap:wrap;gap:5px}
+.etq{font-size:11px;font-weight:500;color:var(--oliva);background:#EAEEE2;border-radius:5px;padding:2px 7px}
+.marco{position:relative;display:block}
+.estrella{position:absolute;top:8px;right:8px;background:rgba(255,253,248,.92);
+  border:1px solid var(--linea);border-radius:999px;width:34px;height:34px;
+  font-size:16px;line-height:1;display:grid;place-items:center}
+.propia{position:absolute;top:10px;left:10px;background:var(--mostaza);color:#3B2C00;
+  font-size:11px;font-weight:600;border-radius:5px;padding:2px 7px}
+.vacio{border:1px dashed var(--linea);border-radius:var(--radio);padding:28px 20px;text-align:center;color:var(--gris)}
+.vacio p{margin:0 0 14px}
+.mas{display:block;width:100%;margin:18px 0 0;border:1px solid var(--linea);background:var(--papel);
+  border-radius:10px;padding:13px;font-weight:600}
+
+.anadir{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:30;
+  background:var(--paprika);color:#fff;border:0;border-radius:999px;padding:14px 20px;
+  font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.22)}
+
+.capa{position:fixed;inset:0;z-index:40;background:rgba(27,26,23,.45);display:flex;align-items:flex-end;justify-content:center}
+.capa[hidden]{display:none}
+.hoja{background:var(--hueso);width:100%;max-width:680px;max-height:94vh;
+  border-radius:18px 18px 0 0;overflow:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+@media(min-width:700px){.capa{align-items:center}.hoja{border-radius:18px;max-height:88vh}}
+.hoja header{position:sticky;top:0;background:var(--hueso);z-index:2;display:flex;
+  justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--linea)}
+.hoja header h2{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+.cerrar{background:none;border:0;font-size:26px;line-height:1;padding:2px 8px;color:var(--gris)}
+.hoja .contenido{padding:16px}
+
+.ficha img,.ficha svg{width:100%;display:block;border-radius:var(--radio);aspect-ratio:20/13;object-fit:cover}
+.ficha h3{margin:16px 0 6px;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.fotobar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.fotobar button{border:1px solid var(--linea);background:var(--papel);border-radius:9px;
+  padding:7px 12px;font-size:14px;font-weight:500;color:var(--gris)}
+.medidas{display:flex;margin:14px 0 18px;border:1px solid var(--linea);
+  border-radius:var(--radio);overflow:hidden;background:var(--papel)}
+.medidas div{flex:1;padding:11px 12px;border-right:1px solid var(--linea)}
+.medidas div:last-child{border-right:0}
+.medidas b{display:block;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.medidas small{color:var(--gris);font-size:12px}
+.ficha h4{margin:20px 0 8px;font-size:14px;font-weight:600;color:var(--paprika)}
+.ficha ul{margin:0;padding-left:18px}
+.ficha ul li{margin-bottom:5px}
+.ficha ol{margin:0;padding-left:20px}
+.ficha ol li{margin-bottom:10px}
+.consejo{background:#EFF2E9;border-left:3px solid var(--oliva-2);padding:11px 13px;
+  border-radius:0 8px 8px 0;font-size:15px;margin-top:18px}
+.acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.btn{border:1px solid var(--linea);background:var(--papel);border-radius:10px;
+  padding:11px 16px;font-weight:600;font-size:15px}
+.btn.principal{background:var(--oliva);border-color:var(--oliva);color:var(--hueso)}
+.btn.peligro{color:var(--paprika);border-color:#E3C4BB}
+
+label{display:block;font-size:14px;font-weight:600;margin:16px 0 6px}
+.contenido > label:first-child{margin-top:0}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;background:var(--papel);
+  border:1px solid var(--linea);border-radius:10px;padding:11px 12px}
+textarea{min-height:104px;resize:vertical;line-height:1.45}
+.pista{font-size:13px;color:var(--gris);font-weight:400;margin-top:4px}
+.dos{display:flex;gap:10px;align-items:center}
+.filaT + .filaT{margin-top:4px}
+.dos>div{flex:1}
+.opciones{display:flex;flex-wrap:wrap;gap:8px}
+.opciones label{margin:0;font-weight:500;font-size:14px;border:1px solid var(--linea);
+  border-radius:999px;padding:7px 13px;background:var(--papel)}
+.opciones input{position:absolute;opacity:0;width:0;height:0}
+.opciones label:has(input:checked){background:var(--paprika);border-color:var(--paprika);color:#fff}
+.opciones label:has(input:focus-visible){outline:3px solid var(--mostaza);outline-offset:2px}
+#fMomentos label:has(input:checked){background:var(--oliva);border-color:var(--oliva)}
+.previa{margin-top:10px;display:none}
+.previa img{width:120px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--linea)}
+.error{color:var(--paprika);font-size:14px;margin-top:14px;min-height:20px}
+.aviso{font-size:13px;color:var(--gris);margin-top:22px;padding-top:14px;border-top:1px solid var(--linea)}
+.crono{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:45;background:var(--oliva);color:var(--hueso);border-radius:14px;
+  padding:12px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.crono[hidden]{display:none}
+.crono b{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.crono .que{flex:1;font-size:13px;color:#BDC7B2;line-height:1.25}
+.crono button{border:0;background:var(--oliva-2);color:var(--hueso);font-weight:600;
+  border-radius:9px;padding:8px 12px;font-size:14px}
+.crono.sonando{background:var(--paprika)}
+.crono.sonando .que{color:#F3D9D2}
+.crono.sonando button{background:#8E3220}
+.btnCrono{width:100%;border:1px solid var(--linea);background:var(--papel);
+  border-radius:10px;padding:12px;font-weight:600;font-size:15px;margin-top:4px}
+.aviso-act{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));
+  z-index:50;background:var(--oliva);color:var(--hueso);border-radius:14px;
+  padding:13px 14px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:15px}
+.aviso-act[hidden]{display:none}
+.aviso-act span{flex:1}
+.aviso-act button{border:0;background:var(--mostaza);color:#3B2C00;font-weight:700;
+  border-radius:9px;padding:9px 14px}
+@media (prefers-reduced-motion:no-preference){
+  .capa{animation:aparece .18s ease-out}
+  @keyframes aparece{from{opacity:0}to{opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>Recetario Air Fryer<br>y Ensaladas</h1>
+  <p class="sub"><span id="total">—</span> recetas con temperatura y tiempo listos para el cesto.</p>
+  <div class="barraEstado">
+    <button class="sinc" id="btnCopiaCab"><i class="guardar"></i><b>Copia de seguridad</b></button>
+    <button class="sinc" id="btnProbar"><i class="guardar"></i><b>Probar el aviso</b></button>
+  </div>
+  <div class="buscador">
+    <input id="busca" type="text" placeholder="Buscar receta o ingrediente" aria-label="Buscar receta o ingrediente" autocomplete="off">
+    <button class="limpiar" id="limpiar" aria-label="Borrar búsqueda" hidden>&times;</button>
+  </div>
+</div>
+
+<div class="filtros">
+  <div class="fila momentos" id="filtroMomento"></div>
+  <div class="fila tipos" id="filtroTipo"></div>
+</div>
+
+<main>
+  <p class="cuenta" id="cuenta"></p>
+  <div class="rejilla" id="rejilla"></div>
+  <button class="mas" id="verMas" hidden>Ver más recetas</button>
+  <div class="vacio" id="vacio" hidden>
+    <p id="vacioTexto">No hay recetas con esos filtros.</p>
+    <button class="btn" id="quitarFiltros">Quitar filtros</button>
+  </div>
+</main>
+
+<button class="anadir" id="btnAnadir">+ Añadir receta</button>
+<input type="file" id="fotoRapida" accept="image/*" hidden>
+<input type="file" id="fotoCamara" accept="image/*" capture="environment" hidden>
+
+<div class="crono" id="crono" hidden>
+  <b id="cronoTiempo">00:00</b>
+  <span class="que" id="cronoQue"></span>
+  <button id="cronoPausa">Pausa</button>
+  <button id="cronoFin">Quitar</button>
+</div>
+
+<div class="aviso-act" id="banner" hidden>
+  <span>Hay una versión nueva del recetario.</span>
+  <button id="btnActualizarYa">Actualizar</button>
+</div>
+
+<div class="capa" id="capaFicha" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloFicha">
+    <header>
+      <h2 id="tituloFicha">Receta</h2>
+      <button class="cerrar" data-cerrar="capaFicha" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="contenido ficha" id="ficha"></div>
+  </div>
+</div>
+
+<div class="capa" id="capaForm" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloForm">
+    <header>
+      <h2 id="tituloForm">Nueva receta</h2>
+      <button class="cerrar" data-cerrar="capaForm" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="contenido">
+      <label for="fNombre">Nombre</label>
+      <input id="fNombre" type="text" placeholder="Merluza al pimentón">
+      <label>¿Cuándo se come?</label>
+      <div class="opciones" id="fMomentos"></div>
+      <p class="pista">Puedes marcar más de uno.</p>
+      <label>Tipo de alimento</label>
+      <div class="opciones" id="fTipos"></div>
+      <div class="dos">
+        <div><label for="fTemp">Temperatura (°C)</label><input id="fTemp" type="number" min="60" max="240" step="5" placeholder="180"></div>
+        <div><label for="fMin">Tiempo (min)</label><input id="fMin" type="number" min="1" max="180" placeholder="15"></div>
+      </div>
+      <p class="pista">Si la receta no pasa por la freidora, una ensalada fría por ejemplo, deja estas dos casillas vacías.</p>
+      <label for="fRaciones">Raciones</label>
+      <input id="fRaciones" type="number" min="1" max="12" placeholder="2">
+      <label for="fIng">Ingredientes</label>
+      <textarea id="fIng" placeholder="2 lomos de merluza&#10;1 cucharadita de pimentón&#10;Medio limón"></textarea>
+      <p class="pista">Uno por línea.</p>
+      <label for="fPasos">Preparación</label>
+      <textarea id="fPasos" placeholder="Salpimentar el pescado.&#10;Precalentar 3 minutos.&#10;Cocinar y dar la vuelta a mitad."></textarea>
+      <p class="pista">Un paso por línea.</p>
+      <label for="fConsejo">Consejo (opcional)</label>
+      <input id="fConsejo" type="text" placeholder="Queda mejor si no amontonas el cesto">
+      <label>Fotografía (opcional)</label>
+      <div class="acciones" style="margin-top:0">
+        <button class="btn" id="fFotoCam">📷 Hacer una foto</button>
+        <button class="btn" id="fFotoGal">Elegir de la galería</button>
+      </div>
+      <input id="fFoto" type="file" accept="image/*" capture="environment" hidden>
+      <input id="fFotoArchivo" type="file" accept="image/*" hidden>
+      <p class="pista">Si no pones foto se dibuja un plato con los colores de tus ingredientes. Puedes añadirla después desde la receta.</p>
+      <div class="previa" id="previa"><img id="previaImg" alt="Vista previa de la fotografía"></div>
+      <p class="error" id="errorForm" role="alert"></p>
+      <div class="acciones">
+        <button class="btn principal" id="guardar">Guardar receta</button>
+        <button class="btn" data-cerrar="capaForm">Cancelar</button>
+      </div>
+      <div class="aviso"><button class="btn" id="btnCopias" style="width:100%">Copia de seguridad</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="capa" id="capaAjuste" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloAjuste">
+    <header>
+      <h2 id="tituloAjuste">Ajustar a mi freidora</h2>
+      <button class="cerrar" data-cerrar="capaAjuste" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="contenido">
+      <p class="pista" style="margin-top:0">Cada freidora es de su padre y de su madre. Pon aquí los grados y los minutos que a ti te funcionan y la receta se queda así para siempre.</p>
+      <p class="pista" id="ajQue" style="color:var(--tinta);font-weight:600"></p>
+      <label for="ajTemp">Temperatura (°C)</label>
+      <input id="ajTemp" type="number" min="60" max="240" step="5">
+      <p class="pista" style="margin-top:14px">Si la receta se hace en dos tandas, pon cada una por separado con <b>+ Añadir otra tanda</b>. También puedes escribir <b>12+10</b> en una sola casilla.</p>
+      <div id="ajTiempos"></div>
+      <p class="error" id="ajError" role="alert"></p>
+      <div class="acciones">
+        <button class="btn principal" id="ajGuardar">Guardar</button>
+        <button class="btn" id="ajOriginal">Volver a lo original</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="capa" id="capaCopia" hidden>
+  <div class="hoja" role="dialog" aria-modal="true" aria-labelledby="tituloCopia">
+    <header>
+      <h2 id="tituloCopia">Copia de seguridad</h2>
+      <button class="cerrar" data-cerrar="capaCopia" aria-label="Cerrar">&times;</button>
+    </header>
+    <div class="contenido">
+      <p class="pista" style="margin-top:0">Guarda un archivo con tus recetas, tus fotos y tus favoritas. Si algún día se pierde algo, lo recuperas desde ese mismo archivo.</p>
+      <p class="pista" id="resumenCopia" style="color:var(--tinta);font-weight:600"></p>
+      <div class="acciones">
+        <button class="btn principal" id="descargarCopia">Descargar copia de seguridad</button>
+        <button class="btn" id="elegirCopia">Restaurar desde un archivo</button>
+      </div>
+      <input type="file" id="ficheroCopia" accept=".json,application/json" hidden>
+      <p class="error" id="errorCopia" role="alert"></p>
+
+      <details style="margin-top:20px">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600">Copiar y pegar como texto</summary>
+        <p class="pista">Solo las recetas, sin fotos. Sirve para pasarlas por correo o por WhatsApp.</p>
+        <textarea id="copiaTexto" style="min-height:140px"></textarea>
+        <div class="acciones">
+          <button class="btn" id="copiarPortapapeles">Copiar al portapapeles</button>
+          <button class="btn" id="restaurar">Pegar y restaurar</button>
+        </div>
+      </details>
+      <p class="pista" id="sincro"></p>
+      <p class="pista" id="espacio"></p>
+      <div class="aviso">
+        <p class="pista" id="version" style="margin:0 0 10px"></p>
+        <button class="btn" id="btnActualizar" style="width:100%">Forzar la actualización</button>
+        <p class="pista" id="estadoAct"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   1. Catálogo
+   Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
+   ============================================================ */
+const VERSION = '6.3 · 09-11-2026';
+
+const CRUDO = `
+desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
+desayuno|Tostada de aguacate y huevo|huevos,verduras,cereales|1|180|9|1 rebanada de pan integral;1 huevo;Medio aguacate;Unas gotas de limón;Sal y pimienta|Tuesta el pan 4 minutos a 180°C y resérvalo;Casca el huevo en un molde pequeño y cocínalo 5 minutos a 180°C;Machaca el aguacate con limón y sal y monta la tostada con el huevo encima|
+desayuno|Huevo en nido de pan integral|huevos,cereales|1|180|8|1 rebanada de pan integral;1 huevo;1 cucharadita de aceite de oliva;Sal y pimienta;Cebollino picado|Recorta un círculo en el centro de la rebanada con un vaso;Pincela el pan con aceite y ponlo sobre papel de horno;Casca el huevo en el hueco y cocina 8 minutos a 180°C|Si te gusta la yema líquida, baja a 6 minutos.
+desayuno|Mollete de jamón y tomate|cereales,carnes,verduras|1|180|6|1 mollete;2 lonchas de jamón serrano;1 tomate rallado;Aceite de oliva|Abre el mollete y tuéstalo 4 minutos a 180°C;Añade el jamón encima y dale 2 minutos más;Corona con el tomate y un hilo de aceite|
+desayuno|Sándwich mixto de pavo y queso|cereales,aves,lacteos|1|190|8|2 rebanadas de pan de molde integral;2 lonchas de pechuga de pavo;1 loncha de queso;1 cucharadita de aceite|Monta el sándwich y pincela el exterior con el aceite;Cocina 5 minutos a 190°C;Da la vuelta y termina 3 minutos más|Pon un palillo en cada esquina para que el aire no levante la tapa.
+desayuno|Tortitas de avena y plátano|cereales,fruta,huevos|2|170|12|1 plátano maduro;2 huevos;60 g de copos de avena;1 cucharadita de canela;Media cucharadita de levadura|Tritura todos los ingredientes hasta obtener una masa lisa;Reparte en moldes de silicona pequeños;Cocina 12 minutos a 170°C hasta que estén doradas|
+desayuno|Avena horneada con manzana y canela|cereales,fruta|2|170|15|80 g de copos de avena;160 ml de leche o bebida vegetal;1 manzana en dados;1 huevo;1 cucharadita de canela;1 cucharada de pasas|Mezcla todo hasta que la avena se empape;Reparte en dos moldes aptos para air fryer;Cocina 15 minutos a 170°C y deja templar 5 minutos|Prepara la mezcla la noche antes y por la mañana solo enciendes la freidora.
+desayuno|Granola crujiente sin azúcar añadido|cereales,fruta|6|150|12|150 g de copos de avena;40 g de almendra laminada;2 cucharadas de aceite de oliva suave;2 cucharadas de puré de dátil;1 cucharadita de canela;30 g de arándanos secos|Mezcla la avena y la almendra con el aceite, el dátil y la canela;Extiende en capa fina sobre papel de horno;Cocina 12 minutos a 150°C removiendo cada 4 minutos y añade los arándanos al final|Queda blanda al salir y cruje al enfriarse.
+desayuno|Magdalenas caseras de yogur|cereales,lacteos,huevos|6|160|15|1 yogur natural;2 huevos;120 g de harina integral;60 ml de aceite de oliva suave;40 g de azúcar moreno;Ralladura de limón y levadura|Bate los huevos con el yogur, el azúcar y el aceite;Incorpora la harina con la levadura y la ralladura;Reparte en cápsulas y cocina 15 minutos a 160°C|No llenes las cápsulas más de dos tercios.
+desayuno|Bizcocho de yogur y limón|cereales,lacteos,huevos|6|160|25|1 yogur natural;3 huevos;150 g de harina;70 ml de aceite de oliva suave;50 g de azúcar;Zumo y ralladura de 1 limón|Bate huevos, yogur, azúcar y aceite;Añade la harina con levadura, el zumo y la ralladura;Vierte en un molde y cocina 25 minutos a 160°C|Cubre con papel de aluminio si se dora demasiado pronto.
+desayuno|Churros al aire con canela|cereales|3|200|10|250 ml de agua;150 g de harina;Una pizca de sal;1 cucharadita de aceite;Canela para espolvorear|Hierve el agua con la sal y el aceite y añade la harina de golpe;Trabaja la masa y forma churros con manga pastelera sobre papel de horno;Cocina 10 minutos a 200°C y espolvorea canela en caliente|Deja reposar la masa 10 minutos antes de la manga.
+desayuno|Croissant relleno de queso fresco y fresas|cereales,lacteos,fruta|2|180|6|2 croissants;4 cucharadas de queso fresco batido;6 fresas laminadas|Abre los croissants por la mitad;Caliéntalos 6 minutos a 180°C;Rellena con el queso y las fresas al sacarlos|
+desayuno|Torrija ligera de pan integral|cereales,huevos,lacteos|2|180|10|4 rebanadas de pan integral del día anterior;200 ml de leche;1 huevo;1 rama de canela;Ralladura de limón|Infusiona la leche con la canela y el limón y déjala templar;Empapa el pan, pásalo por huevo batido y ponlo sobre papel de horno;Cocina 10 minutos a 180°C dándole la vuelta a mitad|Sin fritura no se dora igual: pincela con una gota de aceite.
+desayuno|Magdalenas de huevo con pavo y pimiento|huevos,aves|2|170|12|4 huevos;60 g de pechuga de pavo en tacos;Medio pimiento rojo en dados;1 cucharada de queso batido;Sal y orégano|Bate los huevos con el queso, la sal y el orégano;Reparte el pavo y el pimiento en 4 moldes de silicona;Cubre con el huevo y cocina 12 minutos a 170°C|Aguantan tres días en la nevera.
+desayuno|Tortilla de claras con espinacas|huevos,verduras|1|160|12|3 claras de huevo;1 huevo entero;Un puñado de espinacas frescas;2 tomates cherry;Sal y pimienta|Bate las claras con el huevo entero y salpimenta;Añade las espinacas troceadas y los cherry partidos;Vierte en un molde engrasado y cocina 12 minutos a 160°C|Tapa el molde con aluminio los primeros 6 minutos para que suba parejo.
+desayuno|Revuelto de champiñones|huevos,verduras|2|160|10|4 huevos;150 g de champiñones laminados;1 diente de ajo picado;1 cucharadita de aceite;Sal y perejil|Cocina los champiñones con el ajo y el aceite 5 minutos a 190°C;Baja a 160°C, añade el huevo batido y cocina 5 minutos removiendo a mitad;Termina con perejil y sal|
+desayuno|Plátano asado con canela y nueces|fruta|2|180|8|2 plátanos maduros;1 cucharadita de canela;15 g de nueces picadas;Yogur natural|Abre los plátanos a lo largo sin separarlos;Espolvorea canela y cocina 8 minutos a 180°C con la piel abajo;Sirve con las nueces y una cucharada de yogur|Cuanto más maduro el plátano, menos endulzante necesita.
+desayuno|Manzana asada con nueces|fruta|2|170|18|2 manzanas reineta;1 cucharadita de canela;20 g de nueces;1 cucharadita de miel;Zumo de medio limón|Descorazona las manzanas sin llegar al fondo;Rellena con nueces, canela y miel y riega con el limón;Cocina 18 minutos a 170°C|Haz un corte alrededor de la piel para que no reviente.
+desayuno|Pan de plátano y avena|cereales,fruta|6|160|28|2 plátanos muy maduros;2 huevos;120 g de avena molida;1 yogur natural;1 cucharadita de canela;Levadura|Tritura los plátanos con los huevos y el yogur;Incorpora la avena, la canela y la levadura;Vierte en un molde y cocina 28 minutos a 160°C|Comprueba con un palillo antes de sacarlo.
+desayuno|Palmeritas de hojaldre y canela|cereales|4|180|8|1 lámina de hojaldre;1 cucharada de azúcar moreno;1 cucharadita de canela|Espolvorea el hojaldre con azúcar y canela;Enrolla desde los dos extremos y corta rodajas de 1 cm;Cocina 8 minutos a 180°C dándoles la vuelta a mitad|Deja hueco entre ellas: crecen bastante.
+desayuno|Bocadillo caliente de jamón y tomate|cereales,carnes,verduras|1|190|7|1 pan de barra pequeño;3 lonchas de jamón serrano;1 tomate rallado;Aceite de oliva|Abre el pan y riégalo con el tomate y el aceite;Añade el jamón y cierra;Cocina 7 minutos a 190°C|
+desayuno|Tostada de queso fresco y miel|cereales,lacteos|1|180|5|1 rebanada de pan integral;50 g de queso fresco;1 cucharadita de miel;Unas nueces|Tuesta el pan 5 minutos a 180°C;Coloca el queso fresco encima;Riega con la miel y añade las nueces|
+desayuno|Boniato asado con yogur y canela|verduras,lacteos|2|190|25|1 boniato grande;150 g de yogur griego natural;1 cucharadita de canela;10 g de nueces|Pincha el boniato varias veces y cocínalo entero 25 minutos a 190°C;Ábrelo por la mitad y aplasta la pulpa;Cubre con el yogur, la canela y las nueces|Elige boniatos finos: los gruesos necesitan 35 minutos.
+desayuno|Barritas de avena y dátil|cereales,fruta|6|160|15|120 g de copos de avena;10 dátiles sin hueso;2 cucharadas de mantequilla de cacahuete;1 huevo;30 g de almendra picada|Tritura los dátiles con la mantequilla de cacahuete y el huevo;Mezcla con la avena y la almendra;Extiende en un molde y cocina 15 minutos a 160°C y corta al enfriar|Corta las barritas frías o se desmigan.
+desayuno|Empanadillas de manzana|cereales,fruta|4|180|12|8 obleas de empanadilla;2 manzanas en dados;1 cucharadita de canela;1 cucharadita de miel;1 huevo batido|Cocina la manzana con la canela y la miel 6 minutos a 180°C;Rellena las obleas, ciérralas con un tenedor y pincélalas con huevo;Cocina 12 minutos a 180°C dándoles la vuelta a mitad|
+desayuno|Pan de pita con huevo y aguacate|cereales,huevos,verduras|1|185|8|1 pan de pita integral;1 huevo;Medio aguacate;Sal, pimienta y comino|Abre la pita formando un bolsillo;Casca el huevo dentro con cuidado y salpimenta;Cocina 8 minutos a 185°C y añade el aguacate al servir|
+desayuno|Fresas asadas con yogur|fruta,lacteos|2|180|8|250 g de fresas;1 cucharadita de miel;Zumo de medio limón;300 g de yogur natural|Mezcla las fresas con la miel y el limón;Cocínalas 8 minutos a 180°C en un molde;Sírvelas templadas sobre el yogur|El jugo que sueltan es la mejor parte: no lo tires.
+desayuno|Tortilla francesa con queso|huevos,lacteos|1|160|8|2 huevos;1 loncha de queso;1 cucharadita de leche;Sal y cebollino|Bate los huevos con la leche y la sal;Vierte en un molde pequeño engrasado;Cocina 8 minutos a 160°C poniendo el queso a los 5 minutos|
+desayuno|Rosquillas de anís al aire|cereales|6|175|10|200 g de harina;1 huevo;50 ml de aceite de oliva suave;40 g de azúcar;1 cucharadita de anís en grano;Levadura|Mezcla todo hasta obtener una masa manejable;Forma las rosquillas y colócalas sobre papel de horno;Cocina 10 minutos a 175°C|
+desayuno|Napolitana ligera de chocolate|cereales|2|180|9|1 lámina de hojaldre;40 g de chocolate negro;1 huevo batido|Corta el hojaldre en dos rectángulos y pon el chocolate en el centro;Enrolla y pincela con el huevo;Cocina 9 minutos a 180°C|Sácalas cuando estén doradas por debajo, no solo por arriba.
+
+tapa|Garbanzos crujientes al pimentón|legumbres|4|190|15|1 bote de garbanzos cocidos;1 cucharada de aceite de oliva;1 cucharadita de pimentón dulce;Media cucharadita de comino;Sal|Escurre, enjuaga y seca muy bien los garbanzos;Mézclalos con el aceite y las especias;Cocina 15 minutos a 190°C agitando el cesto cada 5 minutos|El secado es lo único que separa un garbanzo crujiente de uno chicloso.
+tapa|Champiñones rellenos de atún|pescado,verduras|3|180|10|12 champiñones grandes;1 lata de atún al natural;2 cucharadas de tomate frito;1 cucharada de cebolla picada;Perejil|Retira los tallos y pícalos;Mezcla el atún con el tomate, la cebolla y el tallo picado y rellena;Cocina 10 minutos a 180°C|Sala al final o soltarán agua.
+tapa|Boquerones al limón|pescado|3|200|8|400 g de boquerones limpios;1 limón;1 cucharada de aceite;2 dientes de ajo laminados;Perejil y sal|Seca los boquerones y alíñalos con aceite, ajo, sal y ralladura;Colócalos en una sola capa sobre papel de horno;Cocina 8 minutos a 200°C sin darles la vuelta|Una sola capa siempre: apilados se cuecen en vez de dorarse.
+tapa|Pimientos de Padrón|verduras|3|200|8|250 g de pimientos de Padrón;1 cucharadita de aceite;Sal gruesa|Lava y seca los pimientos y mézclalos con el aceite;Cocina 8 minutos a 200°C agitando a mitad;Sala en caliente al sacarlos|Pincha cada pimiento con un palillo para que no revienten.
+tapa|Croquetas de pollo con panko|aves,cereales|4|200|10|12 croquetas caseras de pollo;40 g de panko;1 clara de huevo;Aceite en espray|Pasa las croquetas por clara y luego por panko;Rocía con aceite por todas las caras;Precalienta 3 minutos y cocina 10 minutos a 200°C|Congeladas van directas al cesto: 13 minutos.
+tapa|Berenjena con miel y sésamo|verduras|3|190|14|1 berenjena grande;1 cucharada de aceite;1 cucharadita de miel;1 cucharadita de sésamo;Sal|Corta la berenjena en bastones y déjala 20 minutos en agua con sal;Escurre, seca y mezcla con el aceite;Cocina 14 minutos a 190°C agitando dos veces y termina con miel y sésamo|El remojo le quita el amargor y evita que absorba aceite.
+tapa|Patatas bravas ligeras|verduras|4|200|22|4 patatas en dados;1 cucharada de aceite;2 cucharadas de tomate frito;1 cucharadita de pimentón picante;1 cucharadita de vinagre|Deja los dados 20 minutos en agua fría y sécalos bien;Mézclalos con el aceite y cocina 22 minutos a 200°C agitando cada 7 minutos;Mezcla el tomate con el pimentón y el vinagre y salsea al servir|El remojo retira el almidón y es lo que las vuelve crujientes.
+tapa|Patatas a lo pobre|verduras|3|180|25|3 patatas en rodajas finas;1 cebolla en juliana;1 pimiento verde en tiras;2 cucharadas de aceite;Sal|Mezcla todo con el aceite y la sal;Cocina 25 minutos a 180°C removiendo cada 8 minutos;Deja 2 minutos de reposo antes de servir|
+tapa|Calamares a la andaluza|pescado,cereales|3|200|10|400 g de anillas de calamar;60 g de harina de garbanzo;1 clara de huevo;Aceite en espray;Sal y limón|Seca las anillas, pásalas por clara y luego por harina;Rocía con aceite generosamente;Cocina 10 minutos a 200°C dándoles la vuelta a mitad|Sin aceite en espray la harina queda cruda y blanca.
+tapa|Chipirones al ajillo|pescado|2|200|9|400 g de chipirones limpios;3 dientes de ajo laminados;1 cucharada de aceite;Perejil y sal|Seca bien los chipirones y mézclalos con el aceite y la sal;Cocina 7 minutos a 200°C;Añade el ajo y termina 2 minutos más con el perejil|El ajo entra al final o se quema.
+tapa|Gambas al ajillo|pescado|2|200|8|300 g de gambas peladas;3 dientes de ajo laminados;1 guindilla;1 cucharada de aceite;Perejil|Mezcla las gambas con el aceite, el ajo y la guindilla;Cocina 8 minutos a 200°C agitando a mitad;Termina con perejil picado|
+tapa|Langostinos con pimentón|pescado|3|200|8|12 langostinos;1 cucharada de aceite;1 cucharadita de pimentón;Sal gruesa;Limón|Mezcla los langostinos con el aceite y el pimentón;Cocina 8 minutos a 200°C dándoles la vuelta a mitad;Sirve con sal gruesa y limón|
+tapa|Mejillones gratinados|pescado|3|190|8|12 mejillones cocidos en media concha;2 cucharadas de pan rallado;1 diente de ajo;Perejil;1 cucharadita de aceite|Mezcla el pan rallado con el ajo picado, el perejil y el aceite;Reparte sobre cada mejillón;Cocina 8 minutos a 190°C hasta dorar|
+tapa|Pulpo con patata y pimentón|pescado,verduras|3|190|12|400 g de pulpo cocido en rodajas;2 patatas cocidas en rodajas;1 cucharada de aceite;Pimentón dulce y picante;Sal gruesa|Coloca la patata y el pulpo en el cesto con la mitad del aceite;Cocina 12 minutos a 190°C;Riega con el resto del aceite y espolvorea pimentón y sal|Un golpe de calor le da un borde tostado que no tiene el pulpo cocido.
+tapa|Huevos rotos con patata y jamón|huevos,verduras,carnes|2|190|20|3 patatas en bastones;2 huevos;60 g de jamón serrano en tiras;1 cucharada de aceite;Sal|Cocina las patatas con el aceite 15 minutos a 190°C agitando a mitad;Casca los huevos encima y cocina 5 minutos más;Añade el jamón y rompe los huevos al servir|
+tapa|Croquetas de jamón|carnes,cereales|4|200|10|12 croquetas de jamón;40 g de pan rallado;1 clara de huevo;Aceite en espray|Empana las croquetas con clara y pan rallado;Rocía con aceite;Cocina 10 minutos a 200°C girándolas a mitad|
+tapa|Empanadillas de atún|pescado,cereales|4|190|12|8 obleas de empanadilla;1 lata de atún;4 cucharadas de tomate frito;1 huevo duro picado;1 huevo batido|Mezcla el atún con el tomate y el huevo duro;Rellena y cierra las obleas con un tenedor;Pincela con huevo y cocina 12 minutos a 190°C|
+tapa|Bombas de patata y carne|carnes,verduras|4|200|14|400 g de puré de patata espeso;200 g de carne picada cocinada;60 g de pan rallado;1 clara de huevo|Forma bolas de puré rellenas de carne;Pásalas por clara y pan rallado;Cocina 14 minutos a 200°C dándoles la vuelta a mitad|Enfría el puré antes de formar las bolas.
+tapa|Alitas de pollo al ajillo|aves|3|200|22|12 alitas de pollo;4 dientes de ajo picados;1 cucharada de aceite;Perejil;Sal y pimienta|Seca las alitas y alíñalas con aceite, sal y pimienta;Cocina 15 minutos a 200°C;Añade el ajo, remueve y termina 7 minutos más|Secarlas bien es lo que hace que la piel quede crujiente.
+tapa|Alitas a la miel y mostaza|aves|3|195|22|12 alitas de pollo;1 cucharada de miel;1 cucharada de mostaza;1 cucharadita de aceite;Sal|Mezcla la miel, la mostaza y el aceite y unta las alitas;Cocina 15 minutos a 195°C;Da la vuelta, vuelve a untar y termina 7 minutos|Glasea al final o el azúcar se quema.
+tapa|Muslitos de pollo crujientes|aves|3|195|25|6 muslitos de pollo;1 cucharada de aceite;1 cucharadita de pimentón;Ajo en polvo;Sal y pimienta|Seca los muslitos y alíñalos con el aceite y las especias;Cocina 15 minutos a 195°C con la piel hacia abajo;Da la vuelta y termina 10 minutos|
+tapa|Nuggets caseros de pollo|aves,cereales|4|200|12|400 g de pechuga en dados;1 huevo;60 g de pan rallado;1 cucharadita de ajo en polvo;Sal|Salpimenta el pollo, pásalo por huevo y por pan rallado;Rocía con aceite en espray;Cocina 12 minutos a 200°C dándoles la vuelta a mitad|
+tapa|Dados de jamón y queso empanados|carnes,lacteos|4|200|8|150 g de queso semicurado en dados;100 g de jamón cocido en dados;1 huevo;60 g de pan rallado|Une un dado de queso y otro de jamón con un palillo;Empana con huevo y pan rallado y congela 20 minutos;Cocina 8 minutos a 200°C|El paso por el congelador evita que el queso se escape.
+tapa|Rollitos de primavera de verduras|verduras,cereales|4|190|12|8 obleas de rollito;1 zanahoria en juliana;100 g de col en juliana;1 cebolleta;1 cucharada de salsa de soja|Saltea las verduras 5 minutos a 190°C con la soja;Rellena y enrolla las obleas sellando con agua;Pincela con aceite y cocina 12 minutos a 190°C|
+tapa|Samosas de verduras al curry|verduras,cereales|4|190|14|8 obleas;2 patatas cocidas en dados;50 g de guisantes;1 cucharadita de curry;1 cebolla picada|Mezcla la patata con los guisantes, la cebolla y el curry;Forma triángulos con las obleas y séllalos;Pincela con aceite y cocina 14 minutos a 190°C|
+tapa|Falafel casero|legumbres|4|190|15|250 g de garbanzos remojados sin cocer;1 cebolla;2 dientes de ajo;Perejil y cilantro;Comino y sal|Tritura los garbanzos crudos con el resto sin hacer puré fino;Forma bolas y déjalas 30 minutos en la nevera;Cocina 15 minutos a 190°C dándoles la vuelta a mitad|Con garbanzos de bote se deshace: tienen que ser remojados y crudos.
+tapa|Crujientes de pita con especias|cereales|4|180|6|2 panes de pita;1 cucharada de aceite;1 cucharadita de za'atar o orégano;Sal|Corta las pitas en triángulos y sepáralas en dos capas;Mézclalas con el aceite y las especias;Cocina 6 minutos a 180°C agitando a mitad|
+tapa|Pisto en molde|verduras|4|180|25|1 calabacín;1 berenjena;1 pimiento rojo;1 cebolla;200 g de tomate triturado;Aceite y sal|Corta todas las verduras en dados iguales;Cocínalas con el aceite 15 minutos a 180°C removiendo;Añade el tomate y termina 10 minutos más|Dados del mismo tamaño o unos se deshacen y otros quedan crudos.
+tapa|Piquillos rellenos de bacalao|pescado,verduras|3|185|12|8 pimientos del piquillo;200 g de bacalao desmigado;1 cebolla picada;2 cucharadas de bechamel ligera|Sofríe la cebolla con el bacalao 5 minutos a 190°C;Mezcla con la bechamel y rellena los piquillos;Cocina 12 minutos a 185°C|
+tapa|Soldaditos de Pavía|pescado,cereales|3|200|10|300 g de bacalao desalado en tiras;60 g de harina;1 clara de huevo;1 cucharadita de pimentón;Aceite en espray|Seca el bacalao y pásalo por clara y harina con pimentón;Rocía bien con aceite;Cocina 10 minutos a 200°C dándoles la vuelta a mitad|
+tapa|Sardinas asadas al limón|pescado|2|200|10|8 sardinas limpias;1 limón;1 cucharada de aceite;Sal gruesa|Seca las sardinas y alíñalas con aceite y sal;Cocina 10 minutos a 200°C dándoles la vuelta a los 6;Riega con limón al servir|Pon papel de horno debajo: gotean bastante.
+tapa|Tosta de sardinillas y pimiento|pescado,cereales|2|180|6|4 rebanadas de pan;1 lata de sardinillas;1 pimiento asado en tiras;Aceite de oliva|Tuesta el pan 6 minutos a 180°C;Coloca el pimiento y las sardinillas;Riega con aceite|
+tapa|Zamburiñas gratinadas|pescado|2|190|8|8 zamburiñas;1 cebolla picada;2 cucharadas de pan rallado;1 cucharadita de aceite;Perejil|Sofríe la cebolla 5 minutos a 190°C;Reparte sobre las zamburiñas con el pan rallado y el aceite;Cocina 8 minutos a 190°C|
+tapa|Tortillitas de bacalao|pescado,cereales|4|195|10|150 g de bacalao desmigado;100 g de harina de garbanzo;150 ml de agua;1 cebolleta picada;Perejil|Mezcla la harina con el agua hasta una masa fluida y añade el bacalao y la cebolleta;Forma discos finos sobre papel de horno;Cocina 10 minutos a 195°C girándolas a mitad|Más finas de lo que parece necesario: así quedan crujientes.
+tapa|Croquetas de espinacas y queso|verduras,lacteos|4|200|10|300 g de espinacas cocidas escurridas;100 g de queso fresco;60 g de pan rallado;1 huevo;Nuez moscada|Mezcla las espinacas con el queso y la nuez moscada;Forma croquetas, pásalas por huevo y pan rallado;Cocina 10 minutos a 200°C|
+tapa|Buñuelos de bacalao|pescado|4|195|12|200 g de bacalao desmigado;2 patatas cocidas;1 huevo;1 diente de ajo;Perejil|Machaca la patata con el bacalao, el huevo, el ajo y el perejil;Forma bolas con dos cucharas;Cocina 12 minutos a 195°C dándoles la vuelta a mitad|
+tapa|Aros de cebolla crujientes|verduras,cereales|3|200|12|2 cebollas grandes en aros;1 huevo;80 g de pan rallado;40 g de harina;Aceite en espray|Pasa los aros por harina, huevo y pan rallado;Rocía con aceite por las dos caras;Cocina 12 minutos a 200°C girándolos a mitad|
+tapa|Champiñones al ajillo|verduras|3|190|10|400 g de champiñones;3 dientes de ajo laminados;1 cucharada de aceite;Perejil y sal|Limpia los champiñones y pártelos por la mitad;Mézclalos con el aceite y cocina 8 minutos a 190°C;Añade el ajo y termina 2 minutos con el perejil|
+tapa|Setas con ajo y perejil|verduras|3|190|12|400 g de setas variadas;3 dientes de ajo;1 cucharada de aceite;Perejil y sal|Trocea las setas grandes y mézclalas con el aceite;Cocina 10 minutos a 190°C agitando a mitad;Añade el ajo picado y el perejil y termina 2 minutos|Sala al final: la sal las hace soltar agua.
+tapa|Espárragos trigueros con jamón|verduras,carnes|3|195|10|1 manojo de espárragos trigueros;6 lonchas de jamón serrano;1 cucharadita de aceite;Pimienta|Retira la parte dura de los espárragos;Envuelve grupos de tres con una loncha de jamón;Pincela con aceite y cocina 10 minutos a 195°C|
+tapa|Judías verdes crujientes|verduras|3|195|12|300 g de judías verdes planas;1 cucharada de aceite;1 diente de ajo;Sal y sésamo|Escalda las judías 3 minutos y sécalas;Mézclalas con el aceite y el ajo picado;Cocina 12 minutos a 195°C agitando a mitad y termina con sésamo|
+tapa|Coliflor al pimentón|verduras|3|200|18|Media coliflor en ramilletes;1 cucharada de aceite;1 cucharadita de pimentón;Comino y sal|Mezcla los ramilletes con el aceite y las especias;Cocina 18 minutos a 200°C agitando cada 6 minutos|Ramilletes del mismo tamaño para que se doren a la vez.
+tapa|Brócoli con ajo y limón|verduras|3|195|12|1 brócoli en ramilletes;2 dientes de ajo;1 cucharada de aceite;Ralladura de limón;Sal|Mezcla el brócoli con el aceite y la sal;Cocina 12 minutos a 195°C agitando a mitad;Añade el ajo picado y la ralladura al sacarlo|
+tapa|Chips de calabacín con parmesano|verduras,lacteos|3|190|14|2 calabacines en rodajas finas;30 g de parmesano rallado;30 g de pan rallado;1 clara de huevo|Seca las rodajas con papel de cocina;Pásalas por clara y por la mezcla de queso y pan rallado;Cocina 14 minutos a 190°C en una sola capa|Hazlo en dos tandas antes que amontonarlos.
+tapa|Chips de col rizada|verduras|2|160|8|150 g de col rizada sin tallo;1 cucharadita de aceite;Sal y pimentón|Seca muy bien las hojas y masajéalas con el aceite;Cocina 8 minutos a 160°C revisando cada 3 minutos;Sala al sacarlas|Pasan de crujientes a quemadas en un minuto: no te alejes.
+tapa|Chips de boniato|verduras|3|190|16|1 boniato en rodajas finas;1 cucharada de aceite;Sal y pimentón|Deja las rodajas 15 minutos en agua fría y sécalas;Mézclalas con el aceite;Cocina 16 minutos a 190°C agitando cada 5 minutos|
+tapa|Taquitos de tofu marinado|legumbres|3|200|15|300 g de tofu firme en dados;2 cucharadas de salsa de soja;1 cucharadita de aceite de sésamo;1 cucharada de maicena;Ajo en polvo|Prensa el tofu 20 minutos y córtalo en dados;Marina con la soja y el sésamo y reboza con maicena;Cocina 15 minutos a 200°C agitando cada 5 minutos|La maicena es lo que da la costra crujiente.
+tapa|Tosta de queso de cabra y cebolla|lacteos,cereales|2|190|8|4 rebanadas de pan;1 rulo de queso de cabra en rodajas;1 cebolla en juliana;1 cucharadita de miel|Cocina la cebolla 10 minutos a 190°C hasta que se dore;Monta las tostas con la cebolla y el queso;Cocina 8 minutos a 190°C y riega con miel|
+tapa|Maíz especiado|verduras|3|200|12|3 mazorcas de maíz cocidas;1 cucharada de aceite;1 cucharadita de pimentón;Zumo de lima;Sal|Corta las mazorcas en trozos y úntalas con el aceite y el pimentón;Cocina 12 minutos a 200°C girándolas a mitad;Riega con lima al servir|
+tapa|Dátiles envueltos en pavo|fruta,aves|4|190|10|12 dátiles sin hueso;6 lonchas finas de pavo;12 almendras|Rellena cada dátil con una almendra;Envuélvelos con media loncha de pavo y sujeta con un palillo;Cocina 10 minutos a 190°C girándolos a mitad|
+
+comida|Pollo al limón con romero|aves|2|180|25|2 cuartos traseros de pollo;1 limón;2 ramas de romero;1 cucharada de aceite;Sal y pimienta|Seca el pollo y frótalo con aceite, sal, pimienta y ralladura de limón;Coloca el romero debajo con la piel hacia arriba;Cocina 15 minutos a 180°C, da la vuelta y sigue 10 minutos|Reposa 5 minutos antes de trinchar.
+comida|Merluza con verduras|pescado,verduras|2|180|15|2 lomos de merluza;1 calabacín en rodajas;1 zanahoria en bastones;Medio pimiento rojo;1 cucharada de aceite;Eneldo y sal|Mezcla las verduras con medio aceite y sal y cocínalas 7 minutos a 180°C;Coloca la merluza encima aliñada con el resto;Termina 8 minutos a 180°C sin mover el pescado|Las verduras tardan más que el pescado: por eso entran antes.
+comida|Solomillo de cerdo a la mostaza|carnes|3|190|22|1 solomillo de cerdo;1 cucharada de mostaza antigua;1 cucharadita de aceite;Tomillo;Sal y pimienta|Unta el solomillo con la mostaza, el aceite y el tomillo;Precalienta 3 minutos y cocina 12 minutos a 190°C;Da la vuelta, termina 10 minutos y reposa 8 minutos tapado|El reposo no es opcional: sin él el jugo se queda en la tabla.
+comida|Hamburguesas de lentejas y avena|legumbres,cereales|4|190|15|300 g de lentejas cocidas;40 g de copos de avena;1 zanahoria rallada;1 diente de ajo;Comino, sal y pimienta|Tritura las lentejas dejando algo de textura;Mezcla con la avena, la zanahoria y las especias y forma 4 hamburguesas;Enfría 15 minutos y cocina 15 minutos a 190°C girándolas a mitad|El frío antes de cocinar es lo que impide que se deshagan.
+comida|Muslos de pollo con patata y pimiento|aves,verduras|3|185|30|6 muslos de pollo;3 patatas en gajos;1 pimiento verde;1 cebolla;1 cucharada de aceite;Pimentón y sal|Aliña las patatas y las verduras con el aceite y el pimentón;Ponlas en el fondo y el pollo encima;Cocina 20 minutos a 185°C, da la vuelta al pollo y termina 10 minutos|El jugo del pollo termina de guisar la patata.
+comida|Ternera con pimientos y cebolla|carnes,verduras|2|200|12|300 g de ternera en tiras;1 pimiento rojo;1 pimiento verde;1 cebolla;1 cucharada de soja baja en sal;1 cucharadita de aceite de sésamo|Marina la ternera 15 minutos con la soja y el sésamo;Corta las verduras en tiras del mismo grosor;Cocina todo junto 12 minutos a 200°C agitando cada 4 minutos|Corta la ternera contra la fibra.
+comida|Pechuga rellena de espinacas y queso|aves,verduras,lacteos|2|180|22|2 pechugas de pollo;100 g de espinacas salteadas;60 g de queso fresco;1 cucharadita de aceite;Sal y pimienta|Abre las pechugas en libro y rellénalas con las espinacas y el queso;Ciérralas con palillos y pincela con aceite;Cocina 22 minutos a 180°C girándolas a mitad|
+comida|Pollo al curry con boniato|aves,verduras|3|190|25|500 g de pollo en dados;1 boniato en dados;1 cucharada de curry;100 ml de leche de coco ligera;1 cucharadita de aceite|Marina el pollo con el curry y la leche de coco 20 minutos;Cocina el boniato con el aceite 10 minutos a 190°C;Añade el pollo y termina 15 minutos removiendo a mitad|
+comida|Pollo teriyaki con brócoli|aves,verduras|2|190|18|2 pechugas en tiras;1 brócoli en ramilletes;2 cucharadas de salsa teriyaki;1 cucharadita de sésamo|Marina el pollo 15 minutos con la mitad de la salsa;Cocina el pollo 10 minutos a 190°C;Añade el brócoli y el resto de la salsa y termina 8 minutos|
+comida|Pollo entero asado|aves|4|180|45|1 pollo pequeño de 1,2 kg;1 limón;2 cucharadas de aceite;Tomillo y romero;Sal y pimienta|Seca el pollo y frótalo con aceite, sal, pimienta y hierbas;Mete el limón partido dentro;Cocina 25 minutos a 180°C con la pechuga abajo, da la vuelta y termina 20 minutos|Comprueba que el jugo del muslo salga transparente.
+comida|Contramuslos con miel y limón|aves|3|185|28|6 contramuslos deshuesados;1 cucharada de miel;Zumo de 1 limón;1 cucharadita de aceite;Sal y pimienta|Marina los contramuslos 30 minutos con todo;Cocina 18 minutos a 185°C;Da la vuelta, pincela con la marinada y termina 10 minutos|
+comida|Pavo con champiñones y cebolla|aves,verduras|2|190|16|300 g de pechuga de pavo en tiras;200 g de champiñones;1 cebolla;1 cucharada de aceite;Tomillo y sal|Cocina la cebolla y los champiñones con el aceite 8 minutos a 190°C;Añade el pavo y el tomillo;Termina 8 minutos removiendo a mitad|
+comida|Costillas de cerdo|carnes|3|180|35|1 kg de costillas;1 cucharada de pimentón;1 cucharadita de ajo en polvo;1 cucharada de aceite;Sal|Frota las costillas con el aceite y las especias y déjalas 1 hora;Cocina 25 minutos a 180°C;Da la vuelta y termina 10 minutos|Envuélvelas en aluminio los primeros 20 minutos si las quieres muy tiernas.
+comida|Lomo adobado con patatas|carnes,verduras|3|190|25|6 filetes de lomo adobado;3 patatas en rodajas;1 cebolla;1 cucharada de aceite;Sal|Cocina las patatas y la cebolla con el aceite 15 minutos a 190°C;Coloca el lomo encima;Termina 10 minutos dándole la vuelta a mitad|
+comida|Secreto ibérico con pimientos|carnes,verduras|2|200|14|400 g de secreto ibérico;2 pimientos verdes;1 cucharadita de aceite;Sal gruesa|Precalienta 5 minutos a 200°C;Cocina el secreto 10 minutos dándole la vuelta a mitad;Añade los pimientos con el aceite y termina 4 minutos|Sala solo al sacarlo de la freidora.
+comida|Albóndigas de ternera con tomate|carnes|4|190|16|500 g de carne picada de ternera;1 huevo;2 cucharadas de pan rallado;1 diente de ajo;300 g de tomate triturado|Mezcla la carne con el huevo, el pan rallado y el ajo y forma bolas;Cocina 12 minutos a 190°C agitando a mitad;Pásalas a un molde con el tomate y dales 4 minutos más|
+comida|Hamburguesa casera de ternera|carnes|2|200|12|400 g de carne picada;1 cucharadita de mostaza;Sal y pimienta;2 panes de hamburguesa|Mezcla la carne con la mostaza, la sal y la pimienta y forma dos hamburguesas;Haz un hoyo en el centro de cada una;Cocina 12 minutos a 200°C dándoles la vuelta a mitad|El hoyo central evita que se abomben al cocinarse.
+comida|Filete ruso con cebolla|carnes|3|190|14|400 g de carne picada mixta;1 cebolla picada;1 huevo;2 cucharadas de pan rallado;Perejil y sal|Mezcla todo y forma filetes planos;Cocina 8 minutos a 190°C;Da la vuelta y termina 6 minutos|
+comida|Chuletillas de cordero al ajillo|carnes|2|200|12|8 chuletillas de cordero;3 dientes de ajo;1 cucharadita de aceite;Perejil;Sal gruesa|Precalienta 5 minutos a 200°C;Cocina las chuletillas 6 minutos, dales la vuelta y sigue 4 minutos;Añade el ajo picado y el perejil los 2 últimos minutos|
+comida|Redondo de ternera mechado|carnes|4|180|40|800 g de redondo de ternera;2 zanahorias;1 cebolla;1 cucharada de aceite;Tomillo, sal y pimienta|Ata el redondo y frótalo con aceite, sal, pimienta y tomillo;Cocina 20 minutos a 180°C sobre las verduras;Da la vuelta y termina 20 minutos y reposa 10 minutos antes de cortar|Córtalo frío en lonchas finas y recaliéntalo con su jugo.
+comida|Brochetas de ternera y verduras|carnes,verduras|2|200|14|300 g de ternera en dados;1 pimiento rojo;1 cebolla;1 calabacín;1 cucharada de aceite y especias|Marina la carne 20 minutos con el aceite y las especias;Monta las brochetas alternando carne y verdura;Cocina 14 minutos a 200°C girándolas a los 7 minutos|
+comida|Bacalao con tomate y cebolla|pescado,verduras|2|180|18|2 lomos de bacalao desalado;1 cebolla en juliana;200 g de tomate triturado;1 cucharada de aceite;Orégano|Cocina la cebolla con el aceite 8 minutos a 180°C;Añade el tomate y el orégano y coloca el bacalao encima;Termina 10 minutos a 180°C|
+comida|Lubina a la espalda|pescado|2|190|18|1 lubina abierta;3 dientes de ajo laminados;1 cucharada de aceite;1 guindilla;Vinagre y sal|Sala la lubina y ponla abierta con la piel abajo;Cocina 18 minutos a 190°C;Dora el ajo con el aceite y la guindilla y riega con unas gotas de vinagre|
+comida|Atún encebollado|pescado,verduras|2|190|14|2 rodajas de atún;2 cebollas en juliana;1 cucharada de aceite;1 cucharada de vinagre;Sal|Cocina la cebolla con el aceite 10 minutos a 190°C;Coloca el atún encima y añade el vinagre;Termina 4 minutos: el atún debe quedar rosado dentro|Pasado de punto se seca en un minuto.
+comida|Rape con ajos y pimentón|pescado|2|185|16|2 rodajas de rape;4 dientes de ajo laminados;1 cucharada de aceite;1 cucharadita de pimentón;Sal|Seca el rape y sálalo;Cocina 12 minutos a 185°C;Mezcla el ajo con el aceite y el pimentón, riega y termina 4 minutos|
+comida|Calamares rellenos de verdura|pescado,verduras|3|180|20|6 calamares medianos limpios;1 cebolla;1 pimiento;1 zanahoria;1 cucharada de aceite|Pica las verduras y cocínalas con el aceite 8 minutos a 190°C;Rellena los calamares y ciérralos con un palillo;Cocina 20 minutos a 180°C dándoles la vuelta a mitad|No los llenes del todo: encogen al cocinarse.
+comida|Sepia con ajo y perejil|pescado|2|200|14|500 g de sepia limpia en tiras;3 dientes de ajo;1 cucharada de aceite;Perejil y sal|Seca muy bien la sepia;Mézclala con el aceite y cocina 12 minutos a 200°C agitando a mitad;Añade el ajo y el perejil y termina 2 minutos|
+comida|Salmón teriyaki con sésamo|pescado|2|185|13|2 lomos de salmón;2 cucharadas de salsa teriyaki;1 cucharadita de sésamo;Cebollino|Marina el salmón 20 minutos con la salsa;Cocina 13 minutos a 185°C con la piel abajo;Espolvorea sésamo y cebollino al servir|
+comida|Rodaballo con patata panadera|pescado,verduras|2|185|25|2 lomos de rodaballo;3 patatas en rodajas finas;1 cebolla;1 cucharada de aceite;Sal|Cocina la patata y la cebolla con el aceite 15 minutos a 185°C;Coloca el rodaballo encima;Termina 10 minutos a 185°C|
+comida|Garbanzos con espinacas al horno|legumbres,verduras|3|190|18|1 bote de garbanzos cocidos;200 g de espinacas;2 dientes de ajo;1 cucharadita de pimentón;1 cucharada de aceite|Escurre y seca los garbanzos y mézclalos con el aceite y el pimentón;Cocina 12 minutos a 190°C;Añade las espinacas y el ajo y termina 6 minutos|
+comida|Albóndigas de garbanzo y calabacín|legumbres,verduras|4|190|16|300 g de garbanzos cocidos;1 calabacín rallado y escurrido;1 huevo;3 cucharadas de pan rallado;Comino y sal|Tritura los garbanzos y mézclalos con el resto;Forma bolas y enfríalas 20 minutos;Cocina 16 minutos a 190°C agitando a mitad|Escurre el calabacín con las manos: suelta mucha agua.
+comida|Pimientos rellenos de arroz y atún|verduras,cereales,pescado|3|185|22|6 pimientos del piquillo grandes;200 g de arroz cocido;1 lata de atún;3 cucharadas de tomate frito;Perejil|Mezcla el arroz con el atún, el tomate y el perejil;Rellena los pimientos;Cocina 22 minutos a 185°C|
+comida|Berenjenas rellenas de carne|verduras,carnes|2|180|25|2 berenjenas;250 g de carne picada;1 cebolla;3 cucharadas de tomate triturado;30 g de queso rallado|Parte las berenjenas, vacíalas y cocínalas 10 minutos a 180°C;Sofríe la carne con la cebolla, la pulpa y el tomate;Rellena, cubre con el queso y termina 15 minutos|
+comida|Lasaña de calabacín y pavo|verduras,aves|3|180|28|2 calabacines en láminas;300 g de pavo picado;200 g de tomate triturado;1 cebolla;40 g de queso rallado|Cocina las láminas de calabacín 6 minutos a 180°C y sécalas;Sofríe el pavo con la cebolla y el tomate;Monta capas en un molde, cubre con queso y cocina 22 minutos a 180°C|Seca el calabacín o la lasaña queda aguada.
+comida|Pastel de patata y carne|verduras,carnes|4|190|30|4 patatas cocidas;400 g de carne picada;1 cebolla;2 cucharadas de tomate;40 g de queso rallado|Haz un puré con las patatas;Sofríe la carne con la cebolla y el tomate;Monta puré, carne y puré en un molde, cubre con queso y cocina 30 minutos a 190°C|
+comida|Patatas rellenas de atún|verduras,pescado|2|200|35|2 patatas grandes;1 lata de atún;2 cucharadas de queso batido;Cebollino;Sal y pimienta|Pincha las patatas y cocínalas enteras 30 minutos a 200°C;Ábrelas, saca parte de la pulpa y mézclala con el atún y el queso;Rellena y termina 5 minutos|
+comida|Boniato relleno de pollo|verduras,aves|2|195|35|2 boniatos;200 g de pollo cocinado desmenuzado;2 cucharadas de yogur;Cebollino;Pimentón|Cocina los boniatos enteros 30 minutos a 195°C;Ábrelos y aplasta la pulpa;Rellena con el pollo mezclado con el yogur y termina 5 minutos|
+comida|Empanada de atún|cereales,pescado|4|180|22|2 láminas de masa de empanada;2 latas de atún;1 cebolla;1 pimiento;4 cucharadas de tomate frito;1 huevo batido|Sofríe la cebolla y el pimiento y mezcla con el atún y el tomate;Monta la empanada y píncala con un tenedor;Pincela con huevo y cocina 22 minutos a 180°C|
+comida|Pollo asado con verduras de raíz|aves,verduras|3|185|32|6 contramuslos;2 zanahorias;1 chirivía;1 cebolla;1 cucharada de aceite;Romero y sal|Corta las verduras en trozos y mézclalas con el aceite;Ponlas en el fondo y el pollo encima;Cocina 20 minutos a 185°C, remueve la base y termina 12 minutos|
+comida|Muslos de pavo con ciruelas|aves,fruta|3|180|30|2 muslos de pavo;8 ciruelas pasas;1 cebolla;100 ml de caldo;1 cucharadita de aceite|Dora el pavo 12 minutos a 190°C;Pásalo a un molde con la cebolla, las ciruelas y el caldo;Cocina 18 minutos a 180°C|
+comida|Conejo al ajillo|carnes|2|190|28|1 conejo troceado;6 dientes de ajo;1 cucharada de aceite;1 hoja de laurel;Tomillo y sal|Aliña el conejo con el aceite, la sal y el tomillo;Cocina 18 minutos a 190°C con el laurel;Añade los ajos enteros y termina 10 minutos|El conejo se seca rápido: no pases del tiempo.
+comida|Codornices asadas|aves|2|195|22|4 codornices;1 cucharada de aceite;2 dientes de ajo;Tomillo;Sal y pimienta|Ata las patas de las codornices y alíñalas;Cocina 14 minutos a 195°C;Da la vuelta y termina 8 minutos|
+comida|Cachopo ligero de pavo|aves,lacteos,cereales|2|200|16|2 filetes grandes de pavo;2 lonchas de jamón cocido;2 lonchas de queso;1 huevo;80 g de pan rallado|Rellena un filete con jamón y queso y cúbrelo con el otro sellando los bordes;Empana con huevo y pan rallado y rocía con aceite;Cocina 16 minutos a 200°C dándole la vuelta a mitad|
+comida|Merluza en salsa verde|pescado,verduras|2|180|16|2 lomos de merluza;100 g de guisantes;2 dientes de ajo;1 cucharada de harina;100 ml de caldo de pescado;Perejil|Mezcla el caldo con la harina, el ajo picado y el perejil;Coloca la merluza y los guisantes en un molde y riega con la salsa;Cocina 16 minutos a 180°C moviendo el molde a mitad|
+comida|Arroz al horno con verduras|cereales,verduras|3|180|30|200 g de arroz;400 ml de caldo;1 tomate;1 pimiento;1 cebolla;1 cucharada de aceite|Sofríe las verduras picadas con el aceite 8 minutos a 190°C;Añade el arroz y el caldo caliente en un molde;Cocina 22 minutos a 180°C sin remover|Usa un molde ancho para que el arroz quede en capa fina.
+comida|Quinoa con verduras asadas|cereales,verduras|3|195|20|200 g de quinoa cocida;1 calabacín;1 pimiento;1 cebolla roja;1 cucharada de aceite;Limón y sal|Corta las verduras en dados y mézclalas con el aceite;Cocina 20 minutos a 195°C agitando cada 7 minutos;Mezcla con la quinoa y aliña con limón|
+comida|Tortilla de bacalao|huevos,pescado|3|170|22|200 g de bacalao desmigado;1 cebolla;5 huevos;1 cucharada de aceite;Perejil|Cocina la cebolla y el bacalao con el aceite 10 minutos a 180°C;Bate los huevos y mézclalos con el sofrito;Vierte en un molde y cocina 12 minutos a 170°C|
+comida|Pollo a la mostaza con champiñones|aves,verduras|2|190|22|2 pechugas en trozos;200 g de champiñones;1 cucharada de mostaza;2 cucharadas de queso batido;Sal y pimienta|Mezcla la mostaza con el queso batido y unta el pollo;Cocina 12 minutos a 190°C;Añade los champiñones y termina 10 minutos|
+comida|Hamburguesas de pavo y calabacín|aves,verduras|4|190|15|400 g de pavo picado;1 calabacín rallado y escurrido;1 huevo;2 cucharadas de pan rallado;Ajo y perejil|Mezcla todo y forma 4 hamburguesas;Enfríalas 15 minutos;Cocina 15 minutos a 190°C dándoles la vuelta a mitad|
+comida|Cordero con patatas al romero|carnes,verduras|3|180|40|800 g de paletilla de cordero troceada;4 patatas en gajos;2 ramas de romero;1 cucharada de aceite;Sal|Aliña el cordero y las patatas con el aceite, la sal y el romero;Cocina 25 minutos a 180°C;Da la vuelta y termina 15 minutos|Deja reposar el cordero 10 minutos antes de servir.
+
+cena|Salmón con eneldo y limón|pescado|2|180|12|2 lomos de salmón;1 limón en rodajas;Eneldo fresco;1 cucharadita de aceite;Sal y pimienta|Salpimenta el salmón y pincélalo con aceite;Coloca el limón debajo y el eneldo encima;Cocina 12 minutos a 180°C con la piel abajo sin darle la vuelta|Está listo cuando se abre en lascas al presionar.
+cena|Calabacín relleno de pavo|aves,verduras|2|180|20|2 calabacines;200 g de pavo picado;1 cebolla pequeña;2 cucharadas de tomate triturado;20 g de queso rallado|Parte los calabacines a lo largo y vacía el centro;Sofríe el pavo con la cebolla, la pulpa y el tomate;Rellena, reparte el queso y cocina 20 minutos a 180°C|
+cena|Tortilla de patata sin freír|huevos,verduras|3|170|25|4 patatas en láminas finas;1 cebolla;5 huevos;1 cucharada de aceite;Sal|Mezcla patata y cebolla con el aceite y cocina 15 minutos a 170°C removiendo cada 5;Bate los huevos, incorpora la patata y reposa 5 minutos;Vierte en un molde y cocina 10 minutos a 170°C|Corta la patata muy fina: sin fritura, el grosor manda.
+cena|Dorada entera al ajillo|pescado|2|190|18|1 dorada de 500 g limpia;3 dientes de ajo;1 cucharada de aceite;Medio limón;Perejil y sal|Haz tres cortes en el lomo y sala por dentro y por fuera;Cocina 10 minutos a 190°C, da la vuelta y sigue 8 minutos;Calienta el ajo con el aceite y riega al servir|Calcula 18 minutos por cada 500 g de pescado entero.
+cena|Brochetas de pavo y verduras|aves,verduras|2|190|14|300 g de pavo en dados;1 calabacín;1 pimiento rojo;1 cebolla morada;1 cucharada de aceite;Pimentón|Marina el pavo 20 minutos con el aceite y el pimentón;Monta las brochetas alternando pavo y verdura;Cocina 14 minutos a 190°C girándolas a los 7|Si usas palillos de madera, mójalos antes.
+cena|Coliflor asada con comino y yogur|verduras,lacteos|3|200|20|1 coliflor en ramilletes;1 cucharada de aceite;1 cucharadita de comino;Media de cúrcuma;150 g de yogur griego;1 diente de ajo|Mezcla los ramilletes con el aceite y las especias;Cocina 20 minutos a 200°C agitando cada 7 minutos;Bate el yogur con el ajo y sirve la coliflor encima|
+cena|Pechuga de pollo a las finas hierbas|aves|2|190|16|2 pechugas de pollo;1 cucharadita de aceite;Tomillo, romero y orégano;Sal y pimienta|Aplasta ligeramente las pechugas para igualar el grosor;Alíñalas con el aceite y las hierbas;Cocina 16 minutos a 190°C dándoles la vuelta a mitad|Igualar el grosor evita que un extremo quede seco.
+cena|Verduras asadas variadas|verduras|3|195|20|1 calabacín;1 berenjena;1 pimiento;1 cebolla;1 cucharada de aceite;Sal y orégano|Corta todo en dados del mismo tamaño;Mezcla con el aceite, la sal y el orégano;Cocina 20 minutos a 195°C agitando cada 7 minutos|
+cena|Revuelto de espárragos y gambas|huevos,pescado,verduras|2|160|10|1 manojo de espárragos trigueros;150 g de gambas peladas;4 huevos;1 cucharadita de aceite;Sal|Cocina los espárragos troceados con el aceite 5 minutos a 190°C;Añade las gambas y 2 minutos más;Baja a 160°C, añade el huevo batido y cocina 3 minutos removiendo|
+cena|Tortilla de calabacín|huevos,verduras|2|170|20|2 calabacines en rodajas;1 cebolla;4 huevos;1 cucharada de aceite;Sal|Cocina el calabacín y la cebolla con el aceite 10 minutos a 185°C;Escurre el agua que hayan soltado y mezcla con el huevo batido;Vierte en un molde y cocina 10 minutos a 170°C|
+cena|Lubina con verduritas|pescado,verduras|2|180|16|2 lomos de lubina;1 zanahoria en juliana;1 puerro;Medio calabacín;1 cucharada de aceite;Sal|Cocina las verduras con el aceite 8 minutos a 180°C;Coloca la lubina encima con la piel arriba;Termina 8 minutos a 180°C|
+cena|Bacalao con pimientos asados|pescado,verduras|2|185|16|2 lomos de bacalao;2 pimientos rojos;2 dientes de ajo;1 cucharada de aceite;Sal|Asa los pimientos en tiras con el aceite 8 minutos a 185°C;Coloca el bacalao encima;Termina 8 minutos y añade el ajo laminado al final|
+cena|Sardinas con ensalada templada|pescado,verduras|2|200|10|8 sardinas limpias;1 pimiento verde;1 cebolleta;1 tomate;Aceite y sal|Cocina el pimiento y la cebolleta 6 minutos a 200°C;Añade las sardinas y cocina 10 minutos más;Mezcla con el tomate crudo y aliña|
+cena|Tortilla de espinacas y queso fresco|huevos,verduras,lacteos|2|165|18|200 g de espinacas;4 huevos;80 g de queso fresco;1 cucharadita de aceite;Nuez moscada y sal|Cocina las espinacas con el aceite 5 minutos a 185°C y escúrrelas;Bate los huevos con la nuez moscada y mezcla con las espinacas y el queso;Vierte en un molde y cocina 13 minutos a 165°C|
+cena|Champiñones rellenos de queso y ajo|verduras,lacteos|2|185|12|12 champiñones grandes;100 g de queso crema;2 dientes de ajo;Perejil;Sal y pimienta|Retira los tallos y pícalos;Mezcla con el queso, el ajo y el perejil y rellena;Cocina 12 minutos a 185°C|
+cena|Pimientos rellenos de pavo|verduras,aves|2|185|22|4 pimientos italianos;250 g de pavo picado;1 cebolla;3 cucharadas de tomate;Sal y orégano|Abre los pimientos y retira las semillas;Sofríe el pavo con la cebolla y el tomate y rellena;Cocina 22 minutos a 185°C|
+cena|Berenjena a la parmesana ligera|verduras,lacteos|2|180|22|2 berenjenas en rodajas;300 g de tomate triturado;60 g de mozzarella;Albahaca;1 cucharada de aceite|Cocina las rodajas con el aceite 10 minutos a 190°C;Monta capas con el tomate y la albahaca en un molde;Cubre con la mozzarella y cocina 12 minutos a 180°C|Sala la berenjena y déjala escurrir 20 minutos antes.
+cena|Tomates rellenos de atún|verduras,pescado|2|180|15|4 tomates grandes;2 latas de atún;1 huevo duro;2 cucharadas de queso batido;Cebollino|Vacía los tomates y sálalos por dentro;Mezcla el atún con el huevo picado y el queso y rellena;Cocina 15 minutos a 180°C|
+cena|Wrap de pollo y verduras|aves,cereales,verduras|2|190|8|2 tortillas de trigo;200 g de pollo cocinado en tiras;Lechuga y tomate;1 cucharada de yogur;Pimentón|Mezcla el pollo con el yogur y el pimentón;Rellena las tortillas y enróllalas bien apretadas;Cocina 8 minutos a 190°C con el cierre hacia abajo|Añade la lechuga al abrirlos, no antes.
+cena|Tosta de salmón y aguacate|pescado,cereales|2|180|6|4 rebanadas de pan integral;100 g de salmón ahumado;1 aguacate;Zumo de limón;Pimienta|Tuesta el pan 6 minutos a 180°C;Machaca el aguacate con el limón y extiéndelo;Coloca el salmón y termina con pimienta|
+cena|Muslitos de pollo con limón|aves|2|190|25|4 muslitos de pollo;1 limón;1 cucharadita de aceite;Ajo en polvo;Sal y pimienta|Aliña los muslitos con el aceite, el ajo y la ralladura de limón;Cocina 15 minutos a 190°C;Da la vuelta, riega con el zumo y termina 10 minutos|
+cena|Pavo con pimientos al pimentón|aves,verduras|2|195|15|300 g de pavo en tiras;2 pimientos;1 cebolla;1 cucharadita de pimentón;1 cucharada de aceite|Mezcla el pavo y las verduras con el aceite y el pimentón;Cocina 15 minutos a 195°C agitando cada 5 minutos|
+cena|Gallo al horno con ajo|pescado|2|185|14|2 gallos limpios;3 dientes de ajo;1 cucharada de aceite;Perejil;Sal y limón|Sala los gallos y colócalos sobre papel de horno;Cocina 14 minutos a 185°C;Riega con el ajo dorado en aceite y el perejil|
+cena|Rape con verduras al papillote|pescado,verduras|2|180|18|2 rodajas de rape;1 zanahoria en juliana;1 puerro;Medio calabacín;1 cucharada de aceite;Eneldo|Reparte las verduras sobre dos hojas de papel de horno;Coloca el rape encima con el aceite y el eneldo y cierra los paquetes;Cocina 18 minutos a 180°C|Cierra bien los bordes o el aire seca el pescado.
+cena|Tortilla de setas|huevos,verduras|2|170|18|250 g de setas;4 huevos;1 diente de ajo;1 cucharada de aceite;Perejil y sal|Cocina las setas con el aceite y el ajo 8 minutos a 190°C;Mezcla con los huevos batidos y el perejil;Vierte en un molde y cocina 10 minutos a 170°C|
+cena|Huevos al plato con tomate|huevos,verduras|2|175|12|4 huevos;300 g de tomate triturado;1 cebolla;60 g de jamón cocido;Orégano|Cocina la cebolla con el tomate y el orégano 6 minutos a 190°C en un molde;Casca los huevos encima y añade el jamón;Cocina 6 minutos a 175°C|
+cena|Calabaza asada con especias|verduras|3|195|22|600 g de calabaza en dados;1 cucharada de aceite;1 cucharadita de comino;Pimentón;Sal|Mezcla la calabaza con el aceite y las especias;Cocina 22 minutos a 195°C agitando cada 7 minutos|
+cena|Espárragos verdes con huevo|verduras,huevos|2|185|12|1 manojo de espárragos verdes;2 huevos;1 cucharadita de aceite;Sal gruesa|Cocina los espárragos con el aceite 7 minutos a 185°C;Haz un hueco y casca los huevos encima;Termina 5 minutos|
+cena|Judías verdes con jamón|verduras,carnes|2|190|14|300 g de judías verdes cocidas;80 g de jamón serrano en taquitos;2 dientes de ajo;1 cucharadita de aceite|Mezcla las judías con el aceite y el ajo laminado;Cocina 10 minutos a 190°C;Añade el jamón y termina 4 minutos|
+cena|Alcachofas al ajillo|verduras|2|195|18|6 alcachofas limpias en cuartos;3 dientes de ajo;1 cucharada de aceite;Zumo de limón;Sal|Mezcla las alcachofas con el limón, el aceite y la sal;Cocina 14 minutos a 195°C agitando a mitad;Añade el ajo y termina 4 minutos|El limón evita que se oxiden mientras las preparas.
+cena|Puerros gratinados|verduras,lacteos|2|190|20|4 puerros;100 ml de bechamel ligera;30 g de queso rallado;Nuez moscada|Cocina los puerros partidos a lo largo 12 minutos a 190°C;Cúbrelos con la bechamel y el queso;Gratina 8 minutos a 190°C|
+cena|Endivias gratinadas con pavo|verduras,aves,lacteos|2|190|14|4 endivias;4 lonchas de pavo;80 ml de bechamel ligera;30 g de queso rallado|Envuelve cada endivia con una loncha de pavo;Colócalas en un molde y cubre con la bechamel y el queso;Cocina 14 minutos a 190°C|
+cena|Tofu con verduras y soja|legumbres,verduras|2|200|16|250 g de tofu firme en dados;1 pimiento;1 calabacín;2 cucharadas de soja;1 cucharadita de sésamo|Prensa el tofu y márinalo con la soja 15 minutos;Cocina el tofu 8 minutos a 200°C;Añade las verduras y termina 8 minutos|
+cena|Hamburguesa de garbanzo y zanahoria|legumbres,verduras|3|190|15|300 g de garbanzos cocidos;1 zanahoria rallada;1 huevo;3 cucharadas de pan rallado;Comino y sal|Tritura los garbanzos con el huevo y mezcla con el resto;Forma hamburguesas y enfríalas 20 minutos;Cocina 15 minutos a 190°C girándolas a mitad|
+cena|Merluza rebozada ligera|pescado,cereales|2|195|12|4 filetes de merluza;1 clara de huevo;60 g de pan rallado;Aceite en espray;Limón|Seca la merluza y pásala por clara y pan rallado;Rocía con aceite por las dos caras;Cocina 12 minutos a 195°C dándole la vuelta a mitad|
+cena|Gambón al ajillo con calabacín|pescado,verduras|2|200|10|12 gambones;1 calabacín en rodajas;3 dientes de ajo;1 cucharada de aceite;Perejil|Cocina el calabacín con el aceite 5 minutos a 200°C;Añade los gambones y el ajo;Termina 5 minutos y espolvorea perejil|
+cena|Ensalada templada de pollo y boniato|aves,verduras|2|195|20|1 boniato en dados;250 g de pollo en tiras;Canónigos;1 cucharada de aceite;Vinagre de módena|Cocina el boniato con el aceite 12 minutos a 195°C;Añade el pollo y termina 8 minutos;Sirve sobre los canónigos y aliña|
+cena|Bocaditos de bacalao y patata|pescado,verduras|3|195|14|200 g de bacalao desmigado;2 patatas cocidas;1 huevo;Perejil;Pan rallado|Machaca la patata con el bacalao, el huevo y el perejil;Forma bolas y pásalas por pan rallado;Cocina 14 minutos a 195°C girándolas a mitad|
+cena|Setas rellenas de pavo|verduras,aves|2|185|16|8 setas grandes;200 g de pavo picado;1 cebolla;Perejil;Sal y pimienta|Sofríe el pavo con la cebolla 6 minutos a 190°C;Rellena las setas;Cocina 16 minutos a 185°C|
+cena|Tortilla de atún y cebolla|huevos,pescado|2|170|20|2 latas de atún;1 cebolla;4 huevos;1 cucharadita de aceite;Sal|Cocina la cebolla con el aceite 8 minutos a 185°C;Mézclala con el atún y los huevos batidos;Vierte en un molde y cocina 12 minutos a 170°C|
+cena|Brócoli gratinado con huevo|verduras,huevos|2|185|16|1 brócoli en ramilletes;3 huevos;30 g de queso rallado;1 cucharadita de aceite;Sal|Cocina el brócoli con el aceite 10 minutos a 185°C;Bate los huevos y viértelos por encima con el queso;Termina 6 minutos|
+cena|Calabacines a la carbonara ligera|verduras,huevos,lacteos|2|180|15|2 calabacines en tiras;2 huevos;40 g de queso curado rallado;60 g de jamón cocido;Pimienta|Cocina las tiras de calabacín 10 minutos a 180°C;Bate los huevos con el queso y la pimienta;Mezcla en caliente fuera de la freidora y añade el jamón|El huevo cuaja con el calor residual: no vuelvas a meterlo.
+cena|Pechuga rellena de pimiento y queso|aves,verduras,lacteos|2|185|20|2 pechugas;1 pimiento asado;60 g de queso fresco;1 cucharadita de aceite;Sal y pimienta|Abre las pechugas en libro y rellénalas;Ciérralas con palillos y pincela con aceite;Cocina 20 minutos a 185°C girándolas a mitad|
+cena|Sepia con verduras|pescado,verduras|2|195|15|400 g de sepia en tiras;1 pimiento;1 cebolla;2 dientes de ajo;1 cucharada de aceite|Seca la sepia y mézclala con el aceite;Cocina 8 minutos a 195°C;Añade las verduras y el ajo y termina 7 minutos|
+cena|Salmón con puerro y limón|pescado,verduras|2|180|14|2 lomos de salmón;2 puerros en rodajas;1 limón;1 cucharadita de aceite;Sal|Cocina el puerro con el aceite 6 minutos a 180°C;Coloca el salmón encima con rodajas de limón;Termina 8 minutos|
+cena|Muslos de pollo al pimentón con cebolla|aves,verduras|2|185|26|4 muslos de pollo;2 cebollas en juliana;1 cucharadita de pimentón;1 cucharada de aceite;Sal|Aliña el pollo con el aceite, el pimentón y la sal;Pon la cebolla en el fondo y el pollo encima;Cocina 16 minutos a 185°C, da la vuelta y termina 10 minutos|
+cena|Coca de verduras|cereales,verduras|3|190|18|1 base de masa fina;1 pimiento;1 cebolla;1 calabacín;2 cucharadas de tomate;Orégano|Corta las verduras en tiras finas y mézclalas con el tomate;Extiéndelas sobre la masa;Cocina 18 minutos a 190°C|Verduras muy finas o la masa se queda cruda debajo.
+cena|Patata asada con requesón y cebollino|verduras,lacteos|2|200|35|2 patatas grandes;150 g de requesón;Cebollino;1 cucharadita de aceite;Sal|Pincha las patatas, úntalas con aceite y sal;Cocina 35 minutos a 200°C dándoles la vuelta a mitad;Ábrelas y rellena con el requesón y el cebollino|
+cena|Pastel de calabacín y queso|verduras,huevos,lacteos|3|175|25|3 calabacines rallados y escurridos;4 huevos;100 g de queso fresco;30 g de queso rallado;Sal y pimienta|Escurre bien el calabacín con las manos;Mézclalo con los huevos batidos y los quesos;Vierte en un molde y cocina 25 minutos a 175°C|
+cena|Boquerones al horno con ajo y perejil|pescado|2|195|9|400 g de boquerones limpios;3 dientes de ajo;1 cucharada de aceite;Perejil;Sal y limón|Coloca los boquerones abiertos en una sola capa;Riega con el aceite, el ajo picado y la sal;Cocina 9 minutos a 195°C y termina con perejil y limón|
+merienda|Tostada de chocolate y avellanas|cereales|1|180|5|1 rebanada de pan integral;20 g de chocolate negro;10 g de avellanas picadas|Tuesta el pan 4 minutos a 180°C;Coloca el chocolate troceado encima y dale 1 minuto más;Reparte las avellanas cuando el chocolate se funda|
+merienda|Bizcochitos de zanahoria|cereales,verduras,huevos|6|165|18|2 zanahorias ralladas;2 huevos;120 g de harina integral;50 ml de aceite de oliva suave;40 g de azúcar moreno;Canela y levadura|Bate los huevos con el azúcar y el aceite;Añade la zanahoria, la harina, la canela y la levadura;Reparte en cápsulas y cocina 18 minutos a 165°C|
+merienda|Galletas de avena y plátano|cereales,fruta|4|170|12|2 plátanos maduros;120 g de copos de avena;1 cucharadita de canela;20 g de pasas|Machaca los plátanos y mézclalos con la avena, la canela y las pasas;Forma montoncitos aplastados sobre papel de horno;Cocina 12 minutos a 170°C|Solo dos ingredientes de base: no necesitan azúcar ni huevo.
+merienda|Chips de manzana|fruta|2|150|20|2 manzanas en rodajas muy finas;1 cucharadita de canela;Unas gotas de limón|Corta las manzanas con mandolina si puedes y rocíalas con limón;Espolvorea canela y colócalas en una sola capa;Cocina 20 minutos a 150°C dándoles la vuelta a mitad|Cuanto más finas, más crujientes: 2 mm es lo ideal.
+merienda|Chips de plátano|fruta|2|160|15|2 plátanos poco maduros en rodajas;Zumo de medio limón;Una pizca de sal|Rocía las rodajas con el limón;Colócalas separadas sobre papel de horno;Cocina 15 minutos a 160°C girándolas a mitad|
+merienda|Nachos caseros de maíz|cereales|3|180|8|4 tortillas de maíz;1 cucharada de aceite;Sal y pimentón|Corta las tortillas en triángulos;Mézclalos con el aceite y el pimentón;Cocina 8 minutos a 180°C agitando a mitad|
+merienda|Almendras tostadas con pimentón|fruta|3|160|8|150 g de almendras crudas;1 cucharadita de aceite;1 cucharadita de pimentón;Sal|Mezcla las almendras con el aceite y el pimentón;Cocina 8 minutos a 160°C agitando cada 3 minutos;Sala al sacarlas y deja enfriar|Se tuestan por dentro después de sacarlas: no te pases de tiempo.
+merienda|Garbanzos dulces con canela|legumbres|3|190|15|1 bote de garbanzos cocidos;1 cucharadita de aceite;1 cucharadita de canela;1 cucharadita de miel|Escurre y seca muy bien los garbanzos;Mézclalos con el aceite y la canela y cocina 15 minutos a 190°C agitando cada 5;Riega con la miel al sacarlos|
+merienda|Mini pizzas de pan de molde|cereales,lacteos|2|190|8|4 rebanadas de pan de molde;4 cucharadas de tomate frito;60 g de mozzarella rallada;Orégano|Extiende el tomate sobre el pan;Reparte el queso y el orégano;Cocina 8 minutos a 190°C|
+merienda|Tosta de queso y membrillo|cereales,lacteos,fruta|2|185|6|4 rebanadas de pan;80 g de queso semicurado;60 g de dulce de membrillo|Monta las tostas con el queso y el membrillo encima;Cocina 6 minutos a 185°C hasta que el queso se funda|
+merienda|Bocaditos de dátil y coco|fruta|4|160|10|12 dátiles sin hueso;40 g de coco rallado;30 g de almendra molida;1 cucharada de cacao puro|Tritura los dátiles con la almendra y el cacao;Forma bolitas y rebózalas en coco;Cocina 10 minutos a 160°C y deja enfriar|
+merienda|Buñuelos de manzana|cereales,fruta|4|180|12|2 manzanas en aros;80 g de harina;1 huevo;80 ml de leche;Canela y azúcar|Prepara una masa con la harina, el huevo y la leche;Pasa los aros por la masa y colócalos sobre papel de horno;Cocina 12 minutos a 180°C y espolvorea canela y azúcar|
+merienda|Brochetas de fruta caramelizada|fruta|2|190|8|1 melocotón;1 plátano;8 fresas;1 cucharadita de miel;Canela|Monta las brochetas alternando la fruta en trozos;Pincela con la miel y espolvorea canela;Cocina 8 minutos a 190°C girándolas a mitad|
+merienda|Magdalenas de cacao integrales|cereales,huevos|6|165|16|2 huevos;1 yogur natural;100 g de harina integral;20 g de cacao puro;50 ml de aceite suave;40 g de azúcar y levadura|Bate los huevos con el yogur, el azúcar y el aceite;Incorpora la harina, el cacao y la levadura;Reparte en cápsulas y cocina 16 minutos a 165°C|
+merienda|Crujientes de queso|lacteos|2|180|6|100 g de queso curado rallado;Pimienta;Orégano|Forma montoncitos finos de queso sobre papel de horno bien separados;Espolvorea pimienta y orégano;Cocina 6 minutos a 180°C y deja enfriar antes de despegarlos|Se endurecen al enfriarse: no los toques calientes.
+merienda|Empanadillas de plátano y chocolate|cereales,fruta|4|180|12|8 obleas de empanadilla;2 plátanos en rodajas;40 g de chocolate negro;1 huevo batido|Rellena las obleas con el plátano y el chocolate;Ciérralas con un tenedor y pincélalas con huevo;Cocina 12 minutos a 180°C dándoles la vuelta a mitad|
+merienda|Bastones de boniato con yogur|verduras,lacteos|3|190|18|1 boniato en bastones;1 cucharada de aceite;150 g de yogur natural;Cebollino;Sal y pimentón|Mezcla los bastones con el aceite y el pimentón;Cocina 18 minutos a 190°C agitando cada 6 minutos;Sirve con el yogur y el cebollino|
+merienda|Palitos de pan con ajo y orégano|cereales|3|180|8|1 lámina de masa de pizza;1 cucharada de aceite;1 diente de ajo picado;Orégano y sal|Corta la masa en tiras y retuércelas;Pincela con el aceite mezclado con el ajo y el orégano;Cocina 8 minutos a 180°C|
+merienda|Chips de berenjena|verduras|3|185|14|1 berenjena en rodajas finas;1 cucharada de aceite;Sal y orégano|Sala las rodajas y déjalas escurrir 20 minutos;Sécalas y mézclalas con el aceite y el orégano;Cocina 14 minutos a 185°C en una sola capa|
+merienda|Bolitas de arroz y queso|cereales,lacteos|4|195|14|300 g de arroz cocido;80 g de queso en dados;1 huevo;60 g de pan rallado|Mezcla el arroz con el huevo y forma bolas rellenas de queso;Rebózalas en pan rallado y rocía con aceite;Cocina 14 minutos a 195°C girándolas a mitad|
+merienda|Rollitos de jamón y queso|cereales,carnes,lacteos|4|185|12|1 lámina de hojaldre;6 lonchas de jamón cocido;60 g de queso rallado;1 huevo batido|Reparte el jamón y el queso sobre el hojaldre y enróllalo;Corta rodajas de 2 cm y pincélalas con huevo;Cocina 12 minutos a 185°C|
+merienda|Peras al horno con canela|fruta|2|175|20|2 peras;1 cucharadita de canela;1 cucharadita de miel;10 g de nueces|Parte las peras por la mitad y descorazónalas;Riega con la miel y espolvorea canela;Cocina 20 minutos a 175°C y añade las nueces al servir|
+tapa-mod|Alitas coreanas con gochujang|aves|3|200|22|12 alitas de pollo;2 cucharadas de gochujang;1 cucharada de miel;1 cucharada de soja;1 cucharadita de sésamo|Seca las alitas y cocínalas 15 minutos a 200°C;Mezcla el gochujang con la miel y la soja;Unta las alitas, termina 7 minutos y espolvorea sésamo|Glasea siempre al final o el azúcar se quema.
+tapa-mod|Gyozas al aire|carnes,cereales|4|190|12|12 gyozas;1 cucharadita de aceite de sésamo;Salsa de soja para mojar|Pincela las gyozas con el aceite;Colócalas separadas sobre papel de horno;Cocina 12 minutos a 190°C girándolas a mitad|
+tapa-mod|Brochetas yakitori de pollo|aves|3|195|14|400 g de muslo de pollo en dados;3 cucharadas de salsa yakitori;1 cebolleta;Sésamo|Monta las brochetas alternando pollo y cebolleta;Cocina 10 minutos a 195°C;Pincela con la salsa y termina 4 minutos|
+tapa-mod|Boniato con yogur y sriracha|verduras,lacteos|3|195|18|1 boniato en dados;1 cucharada de aceite;150 g de yogur griego;1 cucharadita de sriracha;Cilantro|Mezcla el boniato con el aceite y cocina 18 minutos a 195°C agitando cada 6;Bate el yogur con la sriracha;Sirve el boniato sobre la salsa con el cilantro|
+tapa-mod|Coliflor búfalo|verduras|3|200|20|Media coliflor en ramilletes;2 cucharadas de salsa picante;1 cucharada de tomate frito;1 cucharadita de aceite;Sal|Mezcla la coliflor con el aceite y cocina 14 minutos a 200°C;Mezcla la salsa picante con el tomate y unta los ramilletes;Termina 6 minutos|
+tapa-mod|Tacos crujientes de pollo|aves,cereales|4|195|12|8 tortillas de maíz pequeñas;300 g de pollo cocinado desmenuzado;60 g de queso rallado;Comino y pimentón|Mezcla el pollo con el queso y las especias;Rellena las tortillas y ciérralas por la mitad con un palillo;Cocina 12 minutos a 195°C girándolos a mitad|
+tapa-mod|Halloumi con miel y sésamo|lacteos|2|190|10|200 g de queso halloumi en bastones;1 cucharadita de aceite;1 cucharadita de miel;Sésamo|Pincela el halloumi con el aceite;Cocina 10 minutos a 190°C girándolo a mitad;Riega con la miel y el sésamo al servir|
+tapa-mod|Patatas gajo con cheddar y cebollino|verduras,lacteos|3|200|25|4 patatas en gajos;1 cucharada de aceite;60 g de cheddar rallado;Cebollino;Pimentón y sal|Deja los gajos 20 minutos en agua y sécalos bien;Mézclalos con el aceite y el pimentón y cocina 22 minutos a 200°C agitando;Añade el queso y termina 3 minutos y remata con cebollino|
+tapa-mod|Brócoli con soja y jengibre|verduras|3|195|13|1 brócoli en ramilletes;1 cucharada de soja;1 cucharadita de jengibre rallado;1 cucharadita de aceite de sésamo;Sésamo|Mezcla el brócoli con la soja, el jengibre y el aceite;Cocina 13 minutos a 195°C agitando a mitad;Espolvorea sésamo al servir|
+tapa-mod|Tempura ligera de verduras|verduras,cereales|3|200|12|1 calabacín en bastones;1 zanahoria;80 g de harina de tempura;100 ml de agua muy fría;Aceite en espray|Prepara la tempura con el agua helada sin batir de más;Pasa las verduras y colócalas separadas sobre papel de horno;Rocía con aceite y cocina 12 minutos a 200°C|El agua tiene que estar helada: es lo que hace la costra ligera.
+tapa-mod|Champiñones rellenos de queso azul y nuez|verduras,lacteos|3|185|12|12 champiñones grandes;80 g de queso azul;20 g de nueces picadas;Pimienta|Retira los tallos de los champiñones;Rellena con el queso y las nueces;Cocina 12 minutos a 185°C|
+tapa-mod|Chips de parmesano y romero|lacteos|2|180|6|100 g de parmesano rallado;Romero picado;Pimienta negra|Forma discos finos de queso sobre papel de horno bien separados;Espolvorea romero y pimienta;Cocina 6 minutos a 180°C y deja enfriar|
+cena-ligera|Calabacín con feta y menta|verduras,lacteos|2|195|15|2 calabacines en medias lunas;80 g de queso feta;1 cucharada de aceite;Menta fresca;Zumo de limón|Mezcla el calabacín con el aceite y cocina 15 minutos a 195°C agitando a mitad;Desmiga el feta por encima;Aliña con el limón y la menta|
+cena-ligera|Rollitos de calabacín con requesón|verduras,lacteos|2|185|14|2 calabacines en láminas finas;150 g de requesón;Cebollino;Ralladura de limón;Sal y pimienta|Cocina las láminas 6 minutos a 185°C y déjalas templar;Mezcla el requesón con el cebollino y la ralladura y rellena las láminas;Enrolla y dales 8 minutos a 185°C|
+cena-ligera|Pescado blanco al limón con espárragos|pescado,verduras|2|180|15|2 lomos de pescado blanco;1 manojo de espárragos verdes;1 limón;1 cucharadita de aceite;Sal y pimienta|Cocina los espárragos con el aceite 7 minutos a 180°C;Coloca el pescado encima con rodajas de limón;Termina 8 minutos a 180°C|
+cena-ligera|Tortilla ligera de un huevo y verduras|huevos,verduras|1|165|12|1 huevo;2 claras;Medio calabacín en dados;Un puñado de espinacas;Sal y pimienta|Cocina el calabacín 5 minutos a 185°C;Bate el huevo con las claras y mezcla con las verduras;Vierte en un molde pequeño y cocina 7 minutos a 165°C|
+cena-ligera|Berenjena rellena de verduras|verduras|2|185|22|2 berenjenas;1 pimiento;1 cebolla;1 tomate;1 cucharada de aceite;Orégano|Parte y vacía las berenjenas y cocínalas 8 minutos a 185°C;Pica la pulpa con las verduras y saltéalas 6 minutos a 190°C;Rellena y termina 14 minutos a 185°C|
+cena-ligera|Pavo a la plancha con canónigos|aves,verduras|2|195|14|2 filetes de pechuga de pavo;Canónigos;1 tomate;1 cucharadita de aceite;Limón y sal|Aplasta los filetes para igualar el grosor y alíñalos;Cocina 14 minutos a 195°C dándoles la vuelta a mitad;Sirve sobre los canónigos con el tomate y aliña con limón|
+cena-ligera|Espinacas y champiñones al ajillo|verduras|2|190|12|300 g de champiñones laminados;200 g de espinacas;2 dientes de ajo;1 cucharada de aceite;Sal|Cocina los champiñones con el aceite 8 minutos a 190°C;Añade las espinacas y el ajo picado;Termina 4 minutos y sala al sacarlos|
+cena-ligera|Pimientos y tomates asados con huevo|verduras,huevos|2|185|18|2 pimientos rojos;2 tomates;2 huevos;1 cucharada de aceite;Sal y orégano|Corta los pimientos y los tomates en tiras y mézclalos con el aceite;Cocina 12 minutos a 185°C;Casca los huevos encima y termina 6 minutos|
+cena-ligera|Brochetas de gambas y calabacín|pescado,verduras|2|200|10|16 gambas peladas;1 calabacín en rodajas;1 cucharadita de aceite;Ajo en polvo;Perejil y sal|Monta las brochetas alternando gamba y calabacín;Pincela con el aceite y el ajo;Cocina 10 minutos a 200°C girándolas a mitad|
+cena-ligera|Gallo con judías verdes|pescado,verduras|2|185|14|2 gallos limpios;250 g de judías verdes cocidas;2 dientes de ajo;1 cucharada de aceite;Limón y sal|Mezcla las judías con el aceite y el ajo y cocínalas 6 minutos a 185°C;Coloca el pescado encima;Termina 8 minutos y riega con limón|
+ensalada|Ensalada de pollo crujiente y romana|aves,verduras,cereales|2|200|14|2 filetes de pechuga de pollo;1 clara de huevo;50 g de pan rallado;1 lechuga romana;2 cucharadas de yogur;Mostaza, limón y sal|Empana el pollo con la clara y el pan rallado y rocíalo con aceite;Cocina 14 minutos a 200°C dándole la vuelta a mitad;Córtalo en tiras sobre la romana y aliña con el yogur mezclado con mostaza y limón|Deja reposar el pollo 3 minutos antes de cortarlo o suelta todo el jugo.
+ensalada|Ensalada césar ligera con picatostes|aves,cereales,lacteos|2|190|16|2 rebanadas de pan del día anterior;1 pechuga de pollo;1 lechuga romana;30 g de parmesano;2 cucharadas de yogur griego;1 anchoa, limón y mostaza|Corta el pan en dados, mézclalo con una cucharadita de aceite y cocínalo 6 minutos a 190°C;Cocina el pollo 16 minutos a 190°C y córtalo en tiras;Bate el yogur con la anchoa picada, la mostaza y el limón y monta la ensalada con el parmesano|La salsa con yogur en vez de huevo y aceite quita la mitad de las calorías.
+ensalada|Ensaladilla rusa con patata asada|verduras,pescado,huevos|4|195|25|3 patatas en dados;2 zanahorias en dados;100 g de guisantes;2 latas de atún;2 huevos duros;3 cucharadas de mayonesa ligera|Mezcla la patata y la zanahoria con una cucharadita de aceite y cocina 25 minutos a 195°C;Deja enfriar del todo y mezcla con los guisantes, el atún y el huevo picado;Liga con la mayonesa y deja una hora en la nevera|Asada en vez de cocida, la patata no queda aguada y sabe mucho más.
+ensalada|Ensalada de boniato, aguacate y canónigos|verduras,fruta|2|195|20|1 boniato en dados;1 aguacate;100 g de canónigos;20 g de nueces;1 cucharada de aceite;Limón, sal y pimienta|Mezcla el boniato con el aceite y cocina 20 minutos a 195°C agitando a mitad;Deja templar y monta sobre los canónigos con el aguacate en gajos;Reparte las nueces y aliña con limón|
+ensalada|Ensalada templada de garbanzos y espinacas|legumbres,verduras|2|190|15|1 bote de garbanzos cocidos;150 g de espinacas frescas;1 cucharada de aceite;1 cucharadita de pimentón;1 diente de ajo;Vinagre de Jerez|Escurre y seca los garbanzos y mézclalos con el aceite y el pimentón;Cocina 15 minutos a 190°C agitando cada 5 minutos;Viértelos calientes sobre las espinacas con el ajo picado y un chorro de vinagre|El calor de los garbanzos es lo que ablanda la espinaca: no hace falta cocerla.
+ensalada|Ensalada de calabaza asada y queso de cabra|verduras,lacteos|2|195|22|500 g de calabaza en dados;80 g de queso de cabra;80 g de rúcula;20 g de pipas de calabaza;1 cucharada de aceite;Miel y vinagre|Mezcla la calabaza con el aceite y cocina 22 minutos a 195°C;Monta sobre la rúcula con el queso desmigado y las pipas;Aliña con una cucharadita de miel y unas gotas de vinagre|
+ensalada|Ensalada de remolacha asada y naranja|verduras,fruta|2|190|30|3 remolachas crudas;1 naranja;1 cebolla morada;50 g de canónigos;1 cucharada de aceite;Sal y pimienta|Envuelve las remolachas en papel de aluminio y cocínalas 30 minutos a 190°C;Pélalas templadas y córtalas en gajos;Monta con la naranja en rodajas, la cebolla en pluma y los canónigos, y aliña|Pélalas con guantes o te teñirás las manos un buen rato.
+ensalada|Ensalada de coliflor asada y granada|verduras,fruta|3|200|18|Media coliflor en ramilletes;1 granada;50 g de rúcula;20 g de almendra laminada;1 cucharada de aceite;Comino y limón|Mezcla la coliflor con el aceite y el comino y cocina 18 minutos a 200°C;Deja templar y mezcla con la rúcula, los granos de granada y la almendra;Aliña con limón|
+ensalada|Ensalada de pimientos asados y atún|verduras,pescado|2|190|20|2 pimientos rojos;2 pimientos verdes;2 latas de atún;1 diente de ajo;2 cucharadas de aceite;Sal|Cocina los pimientos enteros 20 minutos a 190°C dándoles la vuelta a mitad;Tápalos 10 minutos con un paño, pélalos y córtalos en tiras;Mezcla con el atún, el ajo laminado y el aceite|El paño encima es el truco: el vapor despega la piel sola.
+ensalada|Ensalada de berenjena asada con yogur y menta|verduras,lacteos|2|190|18|2 berenjenas en dados;150 g de yogur griego;1 diente de ajo;Menta fresca;1 cucharada de aceite;Limón y sal|Sala la berenjena, déjala escurrir 20 minutos y sécala;Mézclala con el aceite y cocina 18 minutos a 190°C agitando a mitad;Sirve sobre el yogur batido con el ajo, el limón y la menta|
+ensalada|Ensalada de quinoa y verduras asadas|cereales,verduras|3|195|20|200 g de quinoa cocida;1 calabacín;1 pimiento rojo;1 cebolla roja;1 cucharada de aceite;Limón, perejil y sal|Corta las verduras en dados y mézclalas con el aceite;Cocina 20 minutos a 195°C agitando cada 7 minutos;Mezcla con la quinoa fría y aliña con limón y perejil|Aguanta tres días en la nevera y se come fría: buena para llevar.
+ensalada|Ensalada de lentejas y tomate asado|legumbres,verduras|3|180|20|300 g de lentejas cocidas;12 tomates cherry;1 cebolleta;1 cucharada de aceite;Orégano;Vinagre y sal|Cocina los cherry con media cucharada de aceite 20 minutos a 180°C hasta que se abran;Mézclalos con las lentejas y la cebolleta picada;Aliña con el resto del aceite, el vinagre y el orégano|
+ensalada|Ensalada de judías verdes, patata y huevo|verduras,huevos|2|195|22|250 g de judías verdes cocidas;2 patatas en dados;2 huevos duros;1 cebolleta;1 cucharada de aceite;Vinagre y sal|Cocina la patata con el aceite 22 minutos a 195°C;Mézclala templada con las judías y la cebolleta;Corona con el huevo en cuartos y aliña|
+ensalada|Ensalada murciana|verduras,pescado,huevos|2|185|20|4 tomates maduros;1 lata de atún;2 huevos duros;1 cebolla;Aceitunas negras;Aceite y sal|Cocina los tomates enteros 20 minutos a 185°C y pélalos templados;Trocéalos y mézclalos con la cebolla picada y el atún;Corona con el huevo y las aceitunas y aliña con aceite|El tomate asado sustituye al de conserva y sabe muchísimo mejor.
+ensalada|Ensalada de espárragos verdes y jamón|verduras,carnes|2|195|12|1 manojo de espárragos verdes;60 g de jamón serrano;50 g de rúcula;20 g de piñones;1 cucharada de aceite;Vinagre de Módena|Cocina los espárragos con el aceite 10 minutos a 195°C;Añade los piñones y el jamón en tiras y dales 2 minutos;Sirve sobre la rúcula y aliña con el vinagre|
+ensalada|Ensalada de salmón y aguacate|pescado,verduras|2|180|12|2 lomos de salmón;1 aguacate;100 g de brotes verdes;1 cucharadita de aceite;Eneldo;Limón y sal|Cocina el salmón 12 minutos a 180°C y déjalo templar;Desmígalo en lascas sobre los brotes con el aguacate;Aliña con limón, aceite y eneldo|
+ensalada|Ensalada de gambas al ajillo y rúcula|pescado,verduras|2|200|8|250 g de gambas peladas;3 dientes de ajo;80 g de rúcula;12 tomates cherry;1 cucharada de aceite;Guindilla y limón|Mezcla las gambas con el aceite, el ajo y la guindilla;Cocina 8 minutos a 200°C;Viértelas calientes con su jugo sobre la rúcula y los cherry|
+ensalada|Remojón de bacalao y naranja|pescado,fruta|2|185|15|200 g de bacalao desalado;2 naranjas;1 cebolleta;Aceitunas negras;2 cucharadas de aceite;Sal|Cocina el bacalao 15 minutos a 185°C y desmígalo;Pela las naranjas a lo vivo y córtalas en rodajas;Monta con la cebolleta, las aceitunas y el bacalao, y riega con el aceite|
+ensalada|Ensalada de pasta con verduras asadas|cereales,verduras|3|195|20|250 g de pasta corta cocida;1 calabacín;1 berenjena;1 pimiento;1 cucharada de aceite;Albahaca y sal|Corta las verduras en dados y mézclalas con el aceite;Cocina 20 minutos a 195°C agitando cada 7 minutos;Mezcla con la pasta fría y la albahaca|
+ensalada|Ensalada de arroz, pollo y maíz|cereales,aves,verduras|3|190|18|250 g de arroz cocido;1 pechuga de pollo;1 lata de maíz;1 pimiento rojo;2 cucharadas de mayonesa ligera;Curry y sal|Cocina el pollo con el pimiento en dados 18 minutos a 190°C;Deja enfriar y mezcla con el arroz y el maíz;Liga con la mayonesa y una pizca de curry|
+ensalada|Ensalada griega con halloumi|lacteos,verduras|2|190|10|200 g de halloumi en dados;2 tomates;1 pepino;1 cebolla morada;Aceitunas negras;Orégano y aceite|Cocina el halloumi 10 minutos a 190°C hasta que se dore;Mezcla el tomate, el pepino, la cebolla y las aceitunas;Reparte el queso caliente por encima con el orégano y el aceite|
+ensalada|Ensalada caprese templada|verduras,lacteos|2|180|12|4 tomates en rodajas gruesas;125 g de mozzarella;Albahaca;1 cucharada de aceite;Vinagre de Módena y sal|Cocina los tomates 12 minutos a 180°C sobre papel de horno;Colócalos templados alternando con la mozzarella;Termina con albahaca, aceite y unas gotas de vinagre|
+ensalada|Ensalada de champiñones y nueces|verduras,fruta|2|190|12|300 g de champiñones laminados;80 g de canónigos;30 g de nueces;1 diente de ajo;1 cucharada de aceite;Limón y sal|Cocina los champiñones con el aceite 10 minutos a 190°C;Añade el ajo picado y las nueces y dales 2 minutos;Sirve sobre los canónigos con un chorro de limón|
+ensalada|Ensalada de zanahoria asada con comino|verduras,lacteos|2|195|20|4 zanahorias en bastones;150 g de yogur griego;1 cucharadita de comino;20 g de pipas;1 cucharada de aceite;Limón y sal|Mezcla la zanahoria con el aceite y el comino;Cocina 20 minutos a 195°C agitando a mitad;Sirve sobre el yogur con limón y las pipas|
+ensalada|Ensalada de brócoli, almendra y pasas|verduras,fruta|3|195|12|1 brócoli en ramilletes;30 g de almendra laminada;30 g de pasas;2 cucharadas de yogur;1 cucharada de aceite;Limón y sal|Mezcla el brócoli con el aceite y cocina 12 minutos a 195°C;Deja templar y mezcla con las pasas y la almendra;Aliña con el yogur y el limón|
+ensalada|Ensalada de tofu crujiente y col|legumbres,verduras|2|200|15|250 g de tofu firme en dados;200 g de col en juliana;1 zanahoria rallada;1 cucharada de maicena;2 cucharadas de soja;Aceite de sésamo|Prensa el tofu, marínalo con la soja y rebózalo en maicena;Cocina 15 minutos a 200°C agitando cada 5 minutos;Mezcla la col con la zanahoria, añade el tofu y aliña con el sésamo|
+ensalada|Ensalada de pera asada y queso azul|fruta,lacteos|2|185|15|2 peras en gajos;60 g de queso azul;80 g de rúcula;20 g de nueces;1 cucharadita de miel;Vinagre y aceite|Cocina las peras 15 minutos a 185°C;Móntalas templadas sobre la rúcula con el queso desmigado;Termina con las nueces, la miel y unas gotas de vinagre|
+ensalada|Ensalada de manzana, apio y nueces|fruta,verduras|2|170|8|2 manzanas;2 ramas de apio;40 g de nueces;3 cucharadas de yogur;1 cucharadita de mostaza;Limón|Tuesta las nueces 8 minutos a 170°C y déjalas enfriar;Corta la manzana y el apio en bastones y riégalos con limón;Aliña con el yogur mezclado con la mostaza y añade las nueces|Tostar las nueces cambia la ensalada entera: no te saltes ese paso.
+ensalada|Ensalada de calabacín asado y menta|verduras,lacteos|2|195|14|2 calabacines en cintas;60 g de queso feta;Menta fresca;20 g de piñones;1 cucharada de aceite;Limón y sal|Mezcla las cintas de calabacín con el aceite y cocina 14 minutos a 195°C;Deja templar y reparte el feta desmigado y los piñones;Aliña con limón y menta picada|
+ensalada|Patatas aliñadas con atún|verduras,pescado|3|195|25|4 patatas en dados;2 latas de atún;1 cebolleta;Perejil;3 cucharadas de aceite;Vinagre y sal|Mezcla la patata con una cucharada de aceite y cocina 25 minutos a 195°C;Déjala templar y mézclala con el atún y la cebolleta picada;Aliña con el resto del aceite, el vinagre y el perejil|Alíñalas en templado, que es cuando la patata absorbe el aliño.
+`.trim();
+
+const MOMENTOS = [
+  ['desayuno','Desayunos'],
+  ['merienda','Meriendas y picoteos'],
+  ['tapa-trad','Tapas tradicionales'],
+  ['tapa-mod','Tapas modernas'],
+  ['comida','Comidas'],
+  ['cena','Cenas'],
+  ['cena-ligera','Cenas ligeras'],
+  ['ensalada','Ensaladas']
+];
+
+/* Recetas que además pertenecen a otra categoría. Basta añadir el nombre exacto. */
+const TAPAS_MODERNAS = ['Berenjena con miel y sésamo','Taquitos de tofu marinado',
+  'Chips de col rizada','Chips de boniato','Chips de calabacín con parmesano','Falafel casero',
+  'Crujientes de pita con especias','Rollitos de primavera de verduras','Samosas de verduras al curry',
+  'Dátiles envueltos en pavo','Alitas a la miel y mostaza','Nuggets caseros de pollo',
+  'Garbanzos crujientes al pimentón','Coliflor al pimentón','Brócoli con ajo y limón',
+  'Maíz especiado','Tosta de queso de cabra y cebolla','Aros de cebolla crujientes'];
+const TAMBIEN_MERIENDA = ['Tostada de queso fresco y miel','Plátano asado con canela y nueces',
+  'Manzana asada con nueces','Barritas de avena y dátil','Empanadillas de manzana',
+  'Fresas asadas con yogur','Palmeritas de hojaldre y canela','Magdalenas caseras de yogur',
+  'Bizcocho de yogur y limón','Churros al aire con canela','Rosquillas de anís al aire',
+  'Napolitana ligera de chocolate','Pan de plátano y avena','Boniato asado con yogur y canela',
+  'Granola crujiente sin azúcar añadido','Chips de boniato','Chips de col rizada',
+  'Garbanzos crujientes al pimentón','Maíz especiado','Crujientes de pita con especias',
+  'Croissant relleno de queso fresco y fresas','Chips de parmesano y romero','Crujientes de queso'];
+const TAMBIEN_CENA_LIGERA = ['Salmón con eneldo y limón','Verduras asadas variadas',
+  'Lubina con verduritas','Bacalao con pimientos asados','Tomates rellenos de atún',
+  'Espárragos verdes con huevo','Judías verdes con jamón','Alcachofas al ajillo',
+  'Calabaza asada con especias','Gambón al ajillo con calabacín','Rape con verduras al papillote',
+  'Sardinas con ensalada templada','Champiñones rellenos de queso y ajo','Setas rellenas de pavo',
+  'Ensalada templada de pollo y boniato','Brócoli gratinado con huevo',
+  'Pechuga de pollo a las finas hierbas','Tosta de salmón y aguacate','Sepia con verduras',
+  'Salmón con puerro y limón','Gallo al horno con ajo','Coliflor asada con comino y yogur',
+  'Tortilla de calabacín','Tofu con verduras y soja'];
+
+const TAMBIEN_ENSALADA = ['Ensalada templada de pollo y boniato',
+  'Sardinas con ensalada templada','Calabacín con feta y menta',
+  'Pavo a la plancha con canónigos','Coliflor asada con comino y yogur',
+  'Verduras asadas variadas','Tosta de salmón y aguacate'];
+
+function momentosDe(bruto, nombre){
+  const m = new Set();
+  bruto.split(',').forEach(k => {
+    if(k === 'tapa') m.add(TAPAS_MODERNAS.includes(nombre) ? 'tapa-mod' : 'tapa-trad');
+    else m.add(k);
+  });
+  if(TAMBIEN_MERIENDA.includes(nombre)) m.add('merienda');
+  if(TAMBIEN_CENA_LIGERA.includes(nombre)) m.add('cena-ligera');
+  if(TAMBIEN_ENSALADA.includes(nombre)) m.add('ensalada');
+  return [...m];
+}
+const TIPOS = [['carnes','Carnes'],['aves','Aves'],['pescado','Pescado'],['verduras','Verduras'],
+  ['huevos','Huevos'],['legumbres','Legumbres'],['fruta','Fruta'],['cereales','Cereales'],['lacteos','Lácteos']];
+const COLOR_TIPO = {carnes:'#8C3A2B',aves:'#C89A57',pescado:'#DB8C79',verduras:'#4E7A3A',
+  huevos:'#E8C64A',legumbres:'#B07A3C',fruta:'#D0644F',cereales:'#C9A15B',lacteos:'#EFE7D6'};
+const FONDO = {desayuno:'#F2E9D4',merienda:'#F1E6CE','tapa-trad':'#EFE3C8','tapa-mod':'#ECE6D2',
+  comida:'#EEE2C6',cena:'#EAE7D6','cena-ligera':'#E8EADA',ensalada:'#E6EBDA'};
+
+const RECETAS = CRUDO.split('\n').filter(l => l.trim()).map((linea, i) => {
+  const p = linea.split('|');
+  return {
+    id: 'r' + String(i+1).padStart(3,'0'),
+    momentos: momentosDe(p[0], p[1]),
+    nombre: p[1],
+    tipos: p[2].split(','),
+    raciones: +p[3], temp: +p[4], min: +p[5],
+    ing: p[6].split(';'),
+    pasos: p[7].split(';'),
+    consejo: (p[8] || '').trim()
+  };
+});
+
+/* ============================================================
+   2. Guardado
+   ============================================================ */
+const CLAVE = 'recetario:v2';
+const CLAVE_FOTOS = 'recetario:fotos';
+const CLAVE_AJUSTES = 'recetario:ajustes';
+let datos = { propias: [], favoritos: [] };
+let fotos = {};
+let ajustes = {};
+
+async function leerClave(k){
+  try{
+    if(window.storage){
+      const r = await window.storage.get(k);
+      if(r && r.value) return JSON.parse(r.value);
+      return null;
+    }
+  }catch(e){}
+  try{
+    const b = window.localStorage && localStorage.getItem(k);
+    if(b) return JSON.parse(b);
+  }catch(e){}
+  return null;
+}
+async function escribirClave(k, valor){
+  const texto = JSON.stringify(valor);
+  try{ if(window.storage){ await window.storage.set(k, texto); return true; } }catch(e){ console.error(e); }
+  try{ if(window.localStorage){ localStorage.setItem(k, texto); return true; } }catch(e){ console.error(e); }
+  return false;
+}
+
+/* Las recetas, las fotos y las favoritas se guardan en este dispositivo. */
+async function guardarDatos(){ return escribirClave(CLAVE, datos); }
+async function guardarAjustes(){ return escribirClave(CLAVE_AJUSTES, ajustes); }
+
+/* Devuelve la receta con los grados y tiempos que haya puesto el usuario. */
+function conAjustes(r){
+  const a = ajustes[r.id];
+  if(!a) return r;
+  const x = Object.assign({}, r);
+  if(a.temp !== undefined) x.temp = a.temp;
+  if(a.min !== undefined) x.min = a.min;
+  if(a.etapas) x.etapas = a.etapas;
+  x.ajustada = true;
+  return x;
+}
+
+/* Parte la receta en tandas: "15 minutos, dar la vuelta y 10 minutos más".
+   Los tiempos de remojo, marinado o reposo no cuentan. */
+function etapasDe(r){
+  if(r.etapas && r.etapas.length) return r.etapas;
+  const fuera = /(precalient|precalent|marina|reposa|reposar|repose|deja|déjal|dejar|nevera|agua|remoj|enfri|enfrí|templar|escurr|congelador|desala|infusiona|mojar)/i;
+  const halladas = [];
+
+  (r.pasos || []).forEach(paso => {
+    const tempPaso = paso.match(/(\d+)\s*°C/);
+    const cocina = /°C/.test(paso) || /(cocina|cocínal|sigue|termina|gratina|hornea|asa\b|dale|dales)/i.test(paso);
+    if(!cocina) return;
+    for(const m of paso.matchAll(/(\d+)\s*minutos?/gi)){
+      const antes = paso.slice(Math.max(0, m.index - 45), m.index);
+      if(fuera.test(antes)) continue;                       // remojo, reposo, nevera...
+      if(/cada\s*$/i.test(antes) || /mitad|cada/i.test(antes.slice(-12))) continue;  // "agitando cada 5 minutos"
+      const despues = paso.slice(m.index);
+      const t = despues.match(/(\d+)\s*°C/) || tempPaso;
+      halladas.push({min: +m[1], temp: t ? +t[1] : null, texto: paso});
+    }
+  });
+
+  const suma = halladas.reduce((a, e) => a + e.min, 0);
+  if(halladas.length > 1 && r.min && suma >= r.min * 0.85 && suma <= r.min * 1.15) return halladas;
+  return r.min ? [{min: r.min, temp: r.temp || null, texto: ''}] : [];
+}
+
+
+async function guardarFoto(id, img){
+  fotos[id] = img;
+  return escribirClave(CLAVE_FOTOS, fotos);
+}
+
+async function quitarFoto(id){
+  delete fotos[id];
+  return escribirClave(CLAVE_FOTOS, fotos);
+}
+
+function ordenarPropias(){
+  datos.propias.forEach(r => {
+    if(!r.momentos) r.momentos = [r.momento === 'tapa' ? 'tapa-trad' : (r.momento || 'comida')];
+  });
+}
+
+
+
+
+/* ============================================================
+   3. Dibujo del plato a partir de los ingredientes
+   ============================================================ */
+const VOCABULARIO = [
+  ['huevo','huevo','#FFFDF5'],['salmón','losa','#E28A6A'],['salmon','losa','#E28A6A'],
+  ['atún','losa','#C4705A'],['atun','losa','#C4705A'],['bacalao','losa','#EFE7D4'],
+  ['merluza','losa','#EFE7D4'],['dorada','losa','#E3DAC4'],['lubina','losa','#E3DAC4'],
+  ['rodaballo','losa','#E3DAC4'],['gallo','losa','#E3DAC4'],['rape','losa','#E8DCC2'],
+  ['sardin','baston','#C9C0A8'],['boquer','baston','#D8CDB4'],['anchoa','baston','#C0A88E'],
+  ['gamb','cuna','#E88A6A'],['langostino','cuna','#E88A6A'],['calamar','redondo','#EFE7D4'],
+  ['chipiron','baston','#E5DCC6'],['sepia','losa','#E8E0CC'],['pulpo','baston','#C87A78'],
+  ['mejill','cuna','#D8A45C'],['zamburi','cuna','#E0B06A'],['bacon','baston','#C05A4A'],
+  ['pollo','losa','#C9843F'],['pavo','losa','#D8B07A'],['codorn','losa','#C08A4A'],
+  ['cordero','losa','#9C4436'],['conejo','losa','#D8C4A0'],['ternera','losa','#8C3A2B'],
+  ['cerdo','losa','#A9553E'],['lomo','losa','#A9553E'],['solomillo','losa','#A9553E'],
+  ['secreto','losa','#96412F'],['costilla','baston','#8C3A2B'],['carne picada','redondo','#8C3A2B'],
+  ['jamón','losa','#C05A4A'],['jamon','losa','#C05A4A'],['chorizo','redondo','#A83B22'],
+  ['patata','cuna','#E0C173'],['boniato','baston','#D9822B'],['zanahoria','baston','#D97B2B'],
+  ['calabacín','redondo','#5C8A45'],['calabacin','redondo','#5C8A45'],['calabaza','cuna','#D9822B'],
+  ['berenjena','baston','#7C5C8A'],['pimiento','baston','#C4402F'],['piquillo','cuna','#C4402F'],
+  ['tomate','redondo','#C4402F'],['cebolla','baston','#E5D7BA'],['cebolleta','baston','#DCE0BC'],
+  ['puerro','baston','#C8D8A8'],['ajo','grano','#EFE7D0'],['champi','redondo','#C9B79A'],
+  ['seta','redondo','#BFA98A'],['espinaca','hoja','#3F6A2E'],['rúcula','hoja','#4E7A3A'],
+  ['canónigo','hoja','#4E7A3A'],['lechuga','hoja','#6E9450'],['col','hoja','#5C8A45'],
+  ['brócoli','ramillete','#3F6A2E'],['brocoli','ramillete','#3F6A2E'],['coliflor','ramillete','#E0D2B4'],
+  ['espárrago','baston','#6E9450'],['esparrago','baston','#6E9450'],['judía','baston','#5C8A45'],
+  ['judia','baston','#5C8A45'],['guisante','grano','#4E7A3A'],['alcachofa','ramillete','#8AA06E'],
+  ['endivia','hoja','#DCE4C0'],['aceituna','redondo','#5A6B3A'],['maíz','grano','#E5C264'],
+  ['garbanzo','grano','#C9973F'],['lenteja','grano','#8A6A3A'],['alubia','grano','#E8DCC2'],
+  ['tofu','losa','#F0E8D4'],['arroz','grano','#EFE7D2'],['quinoa','grano','#D8C69A'],
+  ['avena','grano','#D8C69A'],['harina','grano','#E8DCC2'],['pan','losa','#D8B98A'],
+  ['hojaldre','losa','#E0C08A'],['oblea','cuna','#E5CC9E'],['masa','losa','#E0C08A'],
+  ['tortilla de trigo','losa','#E5D2AC'],['pita','cuna','#E0C79A'],['pasta','baston','#E5C97A'],
+  ['queso','cuna','#F0D98A'],['mozzarella','redondo','#F5F0E0'],['yogur','redondo','#F5F0E4'],
+  ['leche','redondo','#F7F3E8'],['requesón','redondo','#F5F0E4'],['bechamel','redondo','#F2ECDC'],
+  ['manzana','cuna','#C9463C'],['plátano','baston','#E3C05A'],['platano','baston','#E3C05A'],
+  ['fresa','cuna','#C4302F'],['limón','cuna','#E5C64C'],['limon','cuna','#E5C64C'],
+  ['lima','cuna','#B8C64C'],['naranja','cuna','#E08A2B'],['ciruela','redondo','#6B4A6E'],
+  ['dátil','grano','#7A4B2A'],['datil','grano','#7A4B2A'],['pasa','grano','#6B4A6E'],
+  ['aguacate','cuna','#6E9450'],['almendra','grano','#B98A4E'],['nuez','grano','#A8763E'],
+  ['nueces','grano','#A8763E'],['cacahuete','grano','#C09A5A'],['chocolate','grano','#6B4326'],
+  ['miel','grano','#D9A227'],['pimentón','grano','#B8402A'],['pimenton','grano','#B8402A'],
+  ['canela','grano','#8A5A2A'],['sésamo','grano','#E8DCC2'],['perejil','hoja','#3F6A2E'],
+  ['cebollino','hoja','#4E7A3A'],['romero','hoja','#4E7A3A'],['tomillo','hoja','#5C8A45'],
+  ['eneldo','hoja','#5C8A45'],['albahaca','hoja','#3F6A2E'],['curry','grano','#D9A227']
+];
+
+function semilla(t){ let s=0; for(let i=0;i<t.length;i++) s=(s*31+t.charCodeAt(i))&0x7fffffff; return s||7; }
+function azar(s){ let x=s; return () => { x=(x*1664525+1013904223)&0x7fffffff; return x/0x7fffffff; }; }
+
+function piezasDe(r){
+  const texto = (r.nombre + ' ' + r.ing.join(' ')).toLowerCase();
+  const vistos = new Set(), piezas = [];
+  for(const [clave, forma, color] of VOCABULARIO){
+    if(piezas.length >= 5) break;
+    if(texto.includes(clave) && !vistos.has(forma + color)){
+      vistos.add(forma + color);
+      piezas.push([forma, color]);
+    }
+  }
+  if(piezas.length < 3){
+    (r.tipos || ['verduras']).forEach(t => {
+      if(piezas.length < 3) piezas.push(['redondo', COLOR_TIPO[t] || '#9AA88A']);
+    });
+  }
+  return piezas;
+}
+function pieza(tipo, color, x, y, rot, esc){
+  const claro = 'rgba(255,255,255,.30)';
+  let d = '';
+  switch(tipo){
+    case 'losa':
+      d = `<rect x="-30" y="-17" width="60" height="34" rx="10" fill="${color}"/>
+           <rect x="-22" y="-9" width="44" height="4" rx="2" fill="${claro}"/>
+           <rect x="-22" y="1" width="44" height="4" rx="2" fill="${claro}"/>`; break;
+    case 'baston':
+      d = `<rect x="-26" y="-8" width="52" height="16" rx="7" fill="${color}"/>
+           <rect x="-18" y="-3" width="30" height="3" rx="2" fill="${claro}"/>`; break;
+    case 'cuna':
+      d = `<path d="M-24 14 L0 -16 L24 14 Z" fill="${color}"/>
+           <path d="M-12 12 L0 -3 L12 12 Z" fill="${claro}"/>`; break;
+    case 'redondo':
+      d = `<circle r="19" fill="${color}"/><circle r="10" fill="${claro}"/>`; break;
+    case 'huevo':
+      d = `<ellipse rx="26" ry="20" fill="#FFFDF5"/><circle r="10" fill="#E8B62C"/>`; break;
+    case 'ramillete':
+      d = `<circle cx="-9" cy="-4" r="10" fill="${color}"/><circle cx="8" cy="-7" r="11" fill="${color}"/>
+           <circle cx="1" cy="6" r="10" fill="${color}"/><rect x="-3" y="6" width="6" height="14" rx="3" fill="#8AA06E"/>`; break;
+    case 'hoja':
+      d = `<path d="M0 -18 C16 -10 16 10 0 18 C-16 10 -16 -10 0 -18 Z" fill="${color}"/>
+           <path d="M0 -14 L0 14" stroke="${claro}" stroke-width="2"/>`; break;
+    default:
+      d = `<circle cx="-10" cy="-6" r="5" fill="${color}"/><circle cx="4" cy="-9" r="4.5" fill="${color}"/>
+           <circle cx="10" cy="2" r="5" fill="${color}"/><circle cx="-4" cy="6" r="4" fill="${color}"/>
+           <circle cx="-14" cy="6" r="3.5" fill="${color}"/>`;
+  }
+  return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${esc.toFixed(2)})">${d}</g>`;
+}
+function dibujarPlato(r, clase){
+  const piezas = piezasDe(r);
+  const rnd = azar(semilla(r.id + r.nombre));
+  const n = piezas.length;
+  let cuerpo = '';
+  piezas.forEach((p,i) => {
+    const ang = (i/n)*Math.PI*2 + rnd()*0.7;
+    const rad = 18 + rnd()*46;
+    cuerpo += pieza(p[0], p[1], 200 + Math.cos(ang)*rad*1.15, 130 + Math.sin(ang)*rad*0.82,
+      -30 + rnd()*60, 0.85 + rnd()*0.45);
+  });
+  return `<svg class="${clase}" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ilustración de ${escapar(r.nombre)}">
+    <rect width="400" height="260" fill="${FONDO[r.momentos[0]] || '#EEE7D6'}"/>
+    <ellipse cx="200" cy="132" rx="118" ry="94" fill="rgba(0,0,0,.07)"/>
+    <ellipse cx="200" cy="128" rx="118" ry="94" fill="#FCFAF4"/>
+    <ellipse cx="200" cy="128" rx="98" ry="76" fill="none" stroke="rgba(0,0,0,.06)" stroke-width="2"/>
+    ${cuerpo}</svg>`;
+}
+
+/* ============================================================
+   4. Interfaz
+   ============================================================ */
+let filtroMomento = null, filtrosTipo = new Set(), texto = '', soloFav = false, tope = 24;
+const PASO = 24;
+
+const $ = id => document.getElementById(id);
+const escapar = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nombreMomento = k => (MOMENTOS.find(m => m[0]===k) || ['','—'])[1];
+const nombreTipo = k => (TIPOS.find(t => t[0]===k) || [k,k])[1];
+const todas = () => RECETAS.concat(datos.propias);
+const enFrio = r => !r.temp && !r.min;
+
+function lecturaDe(r){
+  if(enFrio(r)) return '<span class="lectura"><span><b>En frío</b><span>sin freidora</span></span></span>';
+  const t = r.temp ? `<span><b>${r.temp}°</b><span>C</span></span>` : '';
+  const m = r.min ? `<span><b>${r.min}</b><span>min</span></span>` : '';
+  return `<span class="lectura">${t}${m}</span>`;
+}
+function medidasDe(r){
+  const c = [];
+  if(r.temp) c.push(`<div><b>${r.temp}°C</b><small>temperatura</small></div>`);
+  if(r.min) c.push(`<div><b>${r.min}</b><small>minutos</small></div>`);
+  if(enFrio(r)) c.push('<div><b>En frío</b><small>no va a la freidora</small></div>');
+  c.push(`<div><b>${r.raciones || 2}</b><small>raciones</small></div>`);
+  return '<div class="medidas">' + c.join('') + '</div>';
+}
+const fotoDe = r => fotos[r.id] || null;
+
+function pintarFiltros(){
+  $('filtroMomento').innerHTML = '<p class="rotulo">Apartados</p>' +
+    '<button class="chip fav" data-fav-filtro="1" aria-pressed="false">★ Favoritas</button>' +
+    MOMENTOS.map(([k,n]) => `<button class="chip" data-momento="${k}" aria-pressed="false">${n}</button>`).join('');
+  $('filtroTipo').innerHTML = '<p class="rotulo">Tipo de alimento</p>' +
+    TIPOS.map(([k,n]) => `<button class="chip" data-tipo="${k}" aria-pressed="false">${n}</button>`).join('');
+  $('filtroMomento').onclick = e => {
+    const f = e.target.closest('[data-fav-filtro]');
+    if(f){ soloFav = !soloFav; tope = PASO; sincronizarChips(); pintarRejilla(); return; }
+    const b = e.target.closest('[data-momento]'); if(!b) return;
+    filtroMomento = (filtroMomento === b.dataset.momento) ? null : b.dataset.momento;
+    tope = PASO; sincronizarChips(); pintarRejilla();
+  };
+  $('filtroTipo').onclick = e => {
+    const b = e.target.closest('[data-tipo]'); if(!b) return;
+    const t = b.dataset.tipo;
+    filtrosTipo.has(t) ? filtrosTipo.delete(t) : filtrosTipo.add(t);
+    tope = PASO; sincronizarChips(); pintarRejilla();
+  };
+}
+function sincronizarChips(){
+  document.querySelectorAll('[data-momento]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.momento === filtroMomento)));
+  document.querySelectorAll('[data-tipo]').forEach(b => b.setAttribute('aria-pressed', String(filtrosTipo.has(b.dataset.tipo))));
+  document.querySelector('[data-fav-filtro]').setAttribute('aria-pressed', String(soloFav));
+}
+function filtrar(){
+  const q = texto.trim().toLowerCase();
+  return todas().filter(r => {
+    if(soloFav && !datos.favoritos.includes(r.id)) return false;
+    if(filtroMomento && !(r.momentos || []).includes(filtroMomento)) return false;
+    if(filtrosTipo.size && !r.tipos.some(t => filtrosTipo.has(t))) return false;
+    if(q && !(r.nombre + ' ' + r.ing.join(' ') + ' ' + r.tipos.map(nombreTipo).join(' ')).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+function pintarRejilla(){
+  const lista = filtrar();
+  const visibles = lista.slice(0, tope);
+  $('cuenta').textContent = lista.length === 1 ? '1 receta' : lista.length + ' recetas';
+  $('vacio').hidden = lista.length > 0;
+  $('verMas').hidden = lista.length <= tope;
+  if(!lista.length){
+    $('rejilla').innerHTML = '';
+    $('vacioTexto').textContent = texto ? `Nada coincide con «${texto}».` : 'No hay recetas con esos filtros.';
+    return;
+  }
+  $('rejilla').innerHTML = visibles.map(r0 => {
+    const r = conAjustes(r0);
+    const fav = datos.favoritos.includes(r.id);
+    const f = fotoDe(r);
+    const img = f ? `<img class="foto" src="${f}" alt="${escapar(r.nombre)}">` : dibujarPlato(r, 'foto');
+    return `<button class="tarjeta" data-abrir="${r.id}">
+      <span class="marco">${img}
+        ${r.propia ? '<span class="propia">Mía</span>' : ''}
+        <span class="estrella" aria-hidden="true">${fav ? '★' : '☆'}</span>
+      </span>
+      <span class="cuerpo">
+        <h3>${escapar(r.nombre)}</h3>
+        <span class="etiquetas">${r.tipos.map(t => `<span class="etq">${nombreTipo(t)}</span>`).join('')}</span>
+        ${lecturaDe(r)}
+      </span></button>`;
+  }).join('');
+}
+$('rejilla').addEventListener('click', e => {
+  const b = e.target.closest('[data-abrir]');
+  if(b) abrirFicha(b.dataset.abrir);
+});
+$('verMas').addEventListener('click', () => { tope += PASO; pintarRejilla(); });
+
+/* ---------- ficha ---------- */
+let fichaActual = null;
+function abrirFicha(id){
+  const base = todas().find(x => x.id === id);
+  if(!base) return;
+  const r = conAjustes(base);
+  fichaActual = id;
+  const fav = datos.favoritos.includes(r.id);
+  const f = fotoDe(r);
+  const img = f ? `<img src="${f}" alt="${escapar(r.nombre)}">` : dibujarPlato(r, '');
+  $('tituloFicha').textContent = (r.momentos || []).map(nombreMomento).join(' · ');
+  $('ficha').innerHTML = `
+    ${img}
+    <div class="fotobar">
+      <button data-foto="camara">📷 Hacer una foto</button>
+      <button data-foto="galeria">Elegir de la galería</button>
+    </div>
+    <h3>${escapar(r.nombre)}</h3>
+    <div class="etiquetas">${r.tipos.map(t => `<span class="etq">${nombreTipo(t)}</span>`).join('')}</div>
+    ${medidasDe(r)}
+    ${r.min ? `<button class="btnCrono" data-crono="1">⏱ Poner el temporizador · ${etapasDe(r).map(e => e.min).join(' + ')} min</button>` : ''}
+    <button class="btnCrono" data-ajustar="1">✎ Ajustar a mi freidora${r.ajustada ? ' (ajustada)' : ''}</button>
+    <h4>Ingredientes</h4>
+    <ul>${r.ing.map(i => `<li>${escapar(i)}</li>`).join('')}</ul>
+    <h4>Preparación</h4>
+    <ol>${r.pasos.map(p => `<li>${escapar(p)}</li>`).join('')}</ol>
+    ${r.consejo ? `<p class="consejo">${escapar(r.consejo)}</p>` : ''}
+    <div class="acciones">
+      <button class="btn" data-fav="${r.id}">${fav ? '★ Quitar de favoritas' : '☆ Guardar como favorita'}</button>
+      ${r.propia ? `<button class="btn" data-editar="${r.id}">Editar</button>
+                    <button class="btn peligro" data-borrar="${r.id}">Borrar</button>` : ''}
+    </div>`;
+  abrir('capaFicha');
+}
+$('ficha').addEventListener('click', async e => {
+  const cr = e.target.closest('[data-crono]');
+  if(cr){ arrancarCrono(conAjustes(todas().find(x => x.id === fichaActual))); return; }
+  const aj = e.target.closest('[data-ajustar]');
+  if(aj){ abrirAjuste(); return; }
+  const f = e.target.closest('[data-fav]');
+  const ft = e.target.closest('[data-foto]');
+  const ed = e.target.closest('[data-editar]');
+  const bo = e.target.closest('[data-borrar]');
+  if(f){
+    const id = f.dataset.fav, i = datos.favoritos.indexOf(id);
+    i >= 0 ? datos.favoritos.splice(i,1) : datos.favoritos.push(id);
+    await guardarDatos(); abrirFicha(id); pintarRejilla();
+  }
+  if(ft){ $(ft.dataset.foto === 'camara' ? 'fotoCamara' : 'fotoRapida').click(); }
+  if(ed){ cerrar('capaFicha'); abrirFormulario(ed.dataset.editar); }
+  if(bo){
+    const id = bo.dataset.borrar, r = datos.propias.find(x => x.id === id);
+    if(r && confirm(`¿Borrar «${r.nombre}»? No se puede deshacer.`)){
+      datos.propias = datos.propias.filter(x => x.id !== id);
+      datos.favoritos = datos.favoritos.filter(x => x !== id);
+      await guardarDatos(); await quitarFoto(id); cerrar('capaFicha'); pintarRejilla();
+    }
+  }
+});
+
+/* ---------- fotografías ---------- */
+function comprimir(archivo){
+  return new Promise((res, rej) => {
+    const lector = new FileReader();
+    lector.onerror = rej;
+    lector.onload = () => {
+      const im = new Image();
+      im.onerror = rej;
+      im.onload = () => {
+        let salida = '';
+        for(const [max, calidad] of [[800,0.68],[640,0.6],[480,0.55],[360,0.5]]){
+          const esc = Math.min(1, max / Math.max(im.width, im.height));
+          const c = document.createElement('canvas');
+          c.width = Math.round(im.width * esc);
+          c.height = Math.round(im.height * esc);
+          c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+          salida = c.toDataURL('image/jpeg', calidad);
+          if(salida.length < 220000) break;   // tamaño razonable para guardar
+        }
+        res(salida);
+      };
+      im.src = lector.result;
+    };
+    lector.readAsDataURL(archivo);
+  });
+}
+async function recibirFotoRapida(e){
+  const a = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!a || !fichaActual) return;
+  const ok = await guardarFoto(fichaActual, await comprimir(a));
+  if(!ok) alert('La foto se ve ahora, pero no ha podido guardarse. Puede que no quede espacio.');
+  abrirFicha(fichaActual);
+  pintarRejilla();
+}
+$('fotoRapida').addEventListener('change', recibirFotoRapida);
+$('fotoCamara').addEventListener('change', recibirFotoRapida);
+
+/* ---------- ajustar grados y tiempos ---------- */
+function filaTiempo(i, valor, texto, total){
+  return `<div class="filaT" data-fila="${i}">
+    <label for="ajT${i}">${total > 1 ? 'Tiempo ' + (i + 1) : 'Tiempo'} (min)${texto ? ' · ' + escapar(texto.slice(0, 55)) : ''}</label>
+    <div class="dos">
+      <input id="ajT${i}" type="text" inputmode="numeric" value="${valor || ''}" placeholder="15">
+      <button class="btn" data-quitarT="${i}" style="flex:0 0 auto">Quitar</button>
+    </div>
+  </div>`;
+}
+function pintarTiempos(lista){
+  $('ajTiempos').innerHTML = lista.map((e, i) => filaTiempo(i, e.min, e.texto, lista.length)).join('')
+    + '<button class="btn" id="ajMas" style="width:100%;margin-top:12px">+ Añadir otra tanda</button>';
+  $('ajMas').addEventListener('click', () => {
+    const actuales = leerTiempos(true);
+    actuales.push({min: '', texto: ''});
+    pintarTiempos(actuales);
+  });
+  $('ajTiempos').querySelectorAll('[data-quitarT]').forEach(b => {
+    b.addEventListener('click', () => {
+      const actuales = leerTiempos(true);
+      if(actuales.length <= 1){ pintarTiempos([{min: '', texto: ''}]); return; }
+      actuales.splice(+b.dataset.quitart, 1);
+      pintarTiempos(actuales);
+    });
+  });
+}
+/* Lee las casillas. Admite escribir "12+10" en una sola. */
+function leerTiempos(enBruto){
+  const filas = [...$('ajTiempos').querySelectorAll('input')];
+  const salida = [];
+  filas.forEach((inp, i) => {
+    const texto = (inp.value || '').trim();
+    if(enBruto){ salida.push({min: texto, texto: (ajusteEtapas[i] || {}).texto || ''}); return; }
+    texto.split(/[^0-9]+/).filter(Boolean).forEach(trozo => {
+      const n = parseInt(trozo, 10);
+      if(n > 0 && n <= 300) salida.push({min: n, texto: (ajusteEtapas[i] || {}).texto || ''});
+    });
+  });
+  return salida;
+}
+
+let ajusteEtapas = [];
+
+function abrirAjuste(){
+  const base = todas().find(x => x.id === fichaActual);
+  if(!base) return;
+  const r = conAjustes(base);
+  ajusteEtapas = etapasDe(r);
+  $('ajQue').textContent = r.nombre;
+  $('ajTemp').value = r.temp || '';
+  $('ajError').textContent = '';
+  pintarTiempos(ajusteEtapas.length ? ajusteEtapas : [{min: '', texto: ''}]);
+  abrir('capaAjuste');
+}
+
+$('ajGuardar').addEventListener('click', async () => {
+  const base = todas().find(x => x.id === fichaActual);
+  if(!base) return;
+  const temp = parseInt($('ajTemp').value, 10) || null;
+  if(temp && (temp < 60 || temp > 240)){
+    $('ajError').style.color = 'var(--paprika)';
+    $('ajError').textContent = 'La temperatura debe estar entre 60 y 240 °C.';
+    return;
+  }
+  const tandas = leerTiempos(false);
+  if(!tandas.length && !confirm('No has puesto ningún tiempo. ¿Es una receta fría, sin freidora?')) return;
+
+  tandas.forEach(t => { if(!t.temp) t.temp = temp; });
+  const suma = tandas.reduce((a, e) => a + e.min, 0);
+  ajustes[base.id] = {temp, min: suma || null, etapas: tandas.length ? tandas : null};
+  await guardarAjustes();
+  cerrar('capaAjuste');
+  pintarRejilla();
+  abrirFicha(base.id);
+});
+
+$('ajOriginal').addEventListener('click', async () => {
+  const base = todas().find(x => x.id === fichaActual);
+  if(!base) return;
+  delete ajustes[base.id];
+  await guardarAjustes();
+  cerrar('capaAjuste');
+  pintarRejilla();
+  abrirFicha(base.id);
+});
+
+/* ---------- temporizador ---------- */
+const CLAVE_CRONO = 'recetario:crono';
+let crono = {etapas: [], i: 0, fin: 0, resto: 0, corriendo: false,
+             nombre: '', sonando: false, esperando: false};
+let cronoReloj = null, cronoAudio = null, cronoLuz = null, cronoAviso = null;
+
+function mmss(seg){
+  seg = Math.max(0, Math.round(seg));
+  return String(Math.floor(seg / 60)).padStart(2, '0') + ':' + String(seg % 60).padStart(2, '0');
+}
+function hayCrono(){ return crono.fin || crono.resto || crono.sonando; }
+function guardarCrono(){
+  try{
+    if(hayCrono()) localStorage.setItem(CLAVE_CRONO, JSON.stringify(crono));
+    else localStorage.removeItem(CLAVE_CRONO);
+  }catch(e){}
+}
+function restante(){ return crono.corriendo ? (crono.fin - Date.now()) / 1000 : crono.resto; }
+function etapaActual(){ return crono.etapas[crono.i] || null; }
+
+function pintarCrono(){
+  const caja = $('crono');
+  if(!hayCrono()){ caja.hidden = true; return; }
+  caja.hidden = false;
+  caja.className = 'crono' + (crono.sonando ? ' sonando' : '');
+  const total = crono.etapas.length;
+  const tanda = total > 1 ? ` (tanda ${crono.i + 1} de ${total})` : '';
+
+  if(crono.sonando && crono.esperando){
+    const sig = crono.etapas[crono.i + 1] || {};
+    $('cronoTiempo').textContent = '¡Ya!';
+    $('cronoQue').innerHTML = (sig.texto ? escapar(sig.texto) : 'Siguiente tanda')
+      + `<br><b style="font-size:13px">Ahora ${sig.min} min${sig.temp ? ' a ' + sig.temp + '°C' : ''}</b>`;
+  }else if(crono.sonando){
+    $('cronoTiempo').textContent = '¡Ya!';
+    $('cronoQue').textContent = crono.nombre ? 'Listo: ' + crono.nombre : 'Tiempo cumplido';
+  }else{
+    const e = etapaActual() || {};
+    $('cronoTiempo').textContent = mmss(restante());
+    $('cronoQue').textContent = (crono.nombre || '') + tanda
+      + (e.temp ? ' · ' + e.temp + '°C' : '') + (crono.corriendo ? '' : ' · en pausa');
+  }
+  $('cronoPausa').textContent = crono.esperando ? 'Seguir'
+    : (crono.sonando ? 'Callar' : (crono.corriendo ? 'Pausa' : 'Seguir'));
+}
+
+async function pantallaDespierta(encender){
+  try{
+    if(encender && 'wakeLock' in navigator && !cronoLuz) cronoLuz = await navigator.wakeLock.request('screen');
+    if(!encender && cronoLuz){ cronoLuz.release(); cronoLuz = null; }
+  }catch(e){ cronoLuz = null; }
+}
+function latido(){
+  clearInterval(cronoReloj);
+  cronoReloj = setInterval(() => {
+    if(crono.corriendo && restante() <= 0) acabaEtapa();
+    else pintarCrono();
+  }, 500);
+}
+function despertarAudio(){
+  try{ cronoAudio = cronoAudio || new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+  if(cronoAudio && cronoAudio.state === 'suspended') cronoAudio.resume();
+}
+
+function arrancarCrono(r){
+  if(!r) return;
+  const etapas = etapasDe(r);
+  if(!etapas.length) return;
+  callarCrono();
+  crono = {etapas, i: 0, fin: Date.now() + etapas[0].min * 60000, resto: 0,
+           corriendo: true, nombre: r.nombre, sonando: false, esperando: false};
+  despertarAudio();
+  guardarCrono(); pintarCrono(); latido(); pantallaDespierta(true);
+  cerrar('capaFicha');
+}
+function siguienteEtapa(){
+  clearInterval(cronoAviso); cronoAviso = null;
+  crono.i += 1;
+  crono.sonando = false; crono.esperando = false;
+  crono.corriendo = true; crono.resto = 0;
+  crono.fin = Date.now() + crono.etapas[crono.i].min * 60000;
+  guardarCrono(); pintarCrono(); latido(); pantallaDespierta(true);
+}
+function acabaEtapa(){
+  if(crono.sonando) return;
+  clearInterval(cronoReloj); cronoReloj = null;
+  const quedan = crono.i < crono.etapas.length - 1;
+  crono.corriendo = false; crono.fin = 0; crono.resto = 0;
+  crono.sonando = true; crono.esperando = quedan;
+  guardarCrono(); pintarCrono();
+  avisar(quedan);
+}
+
+function pitar(){
+  if(!cronoAudio) return;
+  if(cronoAudio.state === 'suspended') cronoAudio.resume();
+  const tope = cronoAudio.createDynamicsCompressor();
+  tope.threshold.value = -8; tope.knee.value = 0; tope.ratio.value = 20;
+  tope.attack.value = 0.003; tope.release.value = 0.1;
+  tope.connect(cronoAudio.destination);
+  const t0 = cronoAudio.currentTime;
+  [0, 0.4, 0.8, 1.2, 1.6, 2.0].forEach((d, i) => {
+    const base = i % 2 === 0 ? 1100 : 1500;
+    [[base, 'square', 0.8], [base * 2, 'sine', 0.35]].forEach(([hz, tipo, vol]) => {
+      const o = cronoAudio.createOscillator(), g = cronoAudio.createGain();
+      o.type = tipo; o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t0 + d);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + d + 0.01);
+      g.gain.setValueAtTime(vol, t0 + d + 0.26);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.3);
+      o.connect(g); g.connect(tope);
+      o.start(t0 + d); o.stop(t0 + d + 0.32);
+    });
+  });
+}
+function avisar(intermedio){
+  pitar();
+  try{ navigator.vibrate && navigator.vibrate([600, 200, 600, 200, 600]); }catch(e){}
+  clearInterval(cronoAviso);
+  cronoAviso = setInterval(() => {
+    pitar();
+    try{ navigator.vibrate && navigator.vibrate([600, 200, 600]); }catch(e){}
+  }, 2800);
+  // En las tandas intermedias insiste hasta que vuelvas; al final, dos minutos.
+  if(!intermedio) setTimeout(callarCrono, 120000);
+  else setTimeout(() => { clearInterval(cronoAviso); cronoAviso = null; }, 180000);
+}
+function callarCrono(){
+  clearInterval(cronoAviso); cronoAviso = null;
+  clearInterval(cronoReloj); cronoReloj = null;
+  crono = {etapas: [], i: 0, fin: 0, resto: 0, corriendo: false,
+           nombre: '', sonando: false, esperando: false};
+  pantallaDespierta(false);
+  guardarCrono(); pintarCrono();
+}
+
+$('cronoPausa').addEventListener('click', () => {
+  if(crono.esperando){ despertarAudio(); siguienteEtapa(); return; }
+  if(crono.sonando){ callarCrono(); return; }
+  if(crono.corriendo){
+    crono.resto = restante(); crono.corriendo = false; crono.fin = 0;
+    pantallaDespierta(false);
+  }else{
+    crono.fin = Date.now() + crono.resto * 1000; crono.resto = 0; crono.corriendo = true;
+    pantallaDespierta(true); latido();
+  }
+  guardarCrono(); pintarCrono();
+});
+$('cronoFin').addEventListener('click', callarCrono);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) pintarCrono(); });
+
+function recuperarCrono(){
+  let g = null;
+  try{ g = JSON.parse(localStorage.getItem(CLAVE_CRONO) || 'null'); }catch(e){}
+  if(!g || !g.etapas) return;
+  crono = g;
+  if(crono.corriendo && restante() <= 0){ crono.corriendo = false; acabaEtapa(); return; }
+  pintarCrono();
+  if(crono.corriendo) latido();
+}
+
+/* ---------- capas ---------- */
+function abrir(id){ $(id).hidden = false; document.body.style.overflow = 'hidden'; }
+function cerrar(id){ $(id).hidden = true; document.body.style.overflow = ''; }
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-cerrar]');
+  if(c) cerrar(c.dataset.cerrar);
+  if(e.target.classList.contains('capa')) cerrar(e.target.id);
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') document.querySelectorAll('.capa:not([hidden])').forEach(c => cerrar(c.id));
+});
+
+/* ---------- buscador ---------- */
+$('busca').addEventListener('input', e => {
+  texto = e.target.value; tope = PASO;
+  $('limpiar').hidden = !texto;
+  pintarRejilla();
+});
+$('limpiar').addEventListener('click', () => {
+  texto = ''; $('busca').value = ''; $('limpiar').hidden = true; tope = PASO; pintarRejilla(); $('busca').focus();
+});
+$('quitarFiltros').addEventListener('click', () => {
+  filtroMomento = null; filtrosTipo.clear(); texto = ''; soloFav = false; tope = PASO;
+  $('busca').value = ''; $('limpiar').hidden = true;
+  sincronizarChips(); pintarRejilla();
+});
+
+/* ============================================================
+   5. Recetas propias
+   ============================================================ */
+let editandoId = null, fotoTemp = null;
+$('fTipos').innerHTML = TIPOS.map(([k,n]) => `<label><input type="checkbox" value="${k}">${n}</label>`).join('');
+$('fMomentos').innerHTML = MOMENTOS.map(([k,n]) => `<label><input type="checkbox" value="${k}">${n}</label>`).join('');
+
+function abrirFormulario(id){
+  editandoId = id || null; fotoTemp = null;
+  $('errorForm').textContent = '';
+  $('previa').style.display = 'none';
+  $('fFoto').value = '';
+  $('fFotoArchivo').value = '';
+  const r = id ? datos.propias.find(x => x.id === id) : null;
+  $('tituloForm').textContent = r ? 'Editar receta' : 'Nueva receta';
+  $('fNombre').value = r ? r.nombre : '';
+  const suyos = r ? (r.momentos || []) : ['comida'];
+  document.querySelectorAll('#fMomentos input').forEach(c => c.checked = suyos.includes(c.value));
+  $('fTemp').value = r ? r.temp : '';
+  $('fMin').value = r ? r.min : '';
+  $('fRaciones').value = r ? (r.raciones || 2) : '';
+  $('fIng').value = r ? r.ing.join('\n') : '';
+  $('fPasos').value = r ? r.pasos.join('\n') : '';
+  $('fConsejo').value = r ? (r.consejo || '') : '';
+  document.querySelectorAll('#fTipos input').forEach(c => c.checked = !!(r && r.tipos.includes(c.value)));
+  if(r && fotos[r.id]){ fotoTemp = fotos[r.id]; $('previaImg').src = fotoTemp; $('previa').style.display = 'block'; }
+  abrir('capaForm');
+}
+$('btnAnadir').addEventListener('click', () => abrirFormulario(null));
+async function recibirFotoForm(e){
+  const a = e.target.files && e.target.files[0];
+  if(!a) return;
+  fotoTemp = await comprimir(a);
+  $('previaImg').src = fotoTemp;
+  $('previa').style.display = 'block';
+}
+$('fFoto').addEventListener('change', recibirFotoForm);
+$('fFotoArchivo').addEventListener('change', recibirFotoForm);
+$('fFotoCam').addEventListener('click', () => $('fFoto').click());
+$('fFotoGal').addEventListener('click', () => $('fFotoArchivo').click());
+$('guardar').addEventListener('click', async () => {
+  const nombre = $('fNombre').value.trim();
+  const tipos = [...document.querySelectorAll('#fTipos input:checked')].map(c => c.value);
+  const momentos = [...document.querySelectorAll('#fMomentos input:checked')].map(c => c.value);
+  const temp = parseInt($('fTemp').value,10), min = parseInt($('fMin').value,10);
+  const err = $('errorForm');
+  if(!nombre){ err.textContent = 'Ponle un nombre a la receta.'; return; }
+  if(!momentos.length){ err.textContent = 'Marca al menos un apartado (desayunos, tapas, cenas...).'; return; }
+  if(!tipos.length){ err.textContent = 'Marca al menos un tipo de alimento para clasificarla.'; return; }
+  if($('fTemp').value.trim() && (!temp || temp < 60 || temp > 240)){
+    err.textContent = 'La temperatura debe estar entre 60 y 240 °C, o vacía si la receta es fría.'; return;
+  }
+  if($('fMin').value.trim() && (!min || min < 1)){
+    err.textContent = 'El tiempo debe ser de al menos 1 minuto, o estar vacío si la receta es fría.'; return;
+  }
+
+  const receta = {
+    id: editandoId || ('p' + Date.now()), propia: true, nombre,
+    momentos, tipos, temp: temp || null, min: min || null,
+    raciones: parseInt($('fRaciones').value,10) || 2,
+    ing: $('fIng').value.split('\n').map(s => s.trim()).filter(Boolean),
+    pasos: $('fPasos').value.split('\n').map(s => s.trim()).filter(Boolean),
+    consejo: $('fConsejo').value.trim()
+  };
+  if(!receta.ing.length) receta.ing = ['Sin ingredientes anotados'];
+  if(!receta.pasos.length) receta.pasos = ['Sin preparación anotada'];
+
+  if(editandoId) datos.propias = datos.propias.map(r => r.id === editandoId ? receta : r);
+  else datos.propias.push(receta);
+  const ok = await guardarDatos();
+  if(fotoTemp) await guardarFoto(receta.id, fotoTemp);
+  if(!ok) err.textContent = 'La receta se ve en pantalla, pero no se ha podido guardar en el dispositivo.';
+  cerrar('capaForm'); pintarRejilla(); abrirFicha(receta.id);
+});
+
+/* ---------- copia de seguridad ---------- */
+$('btnCopiaCab').addEventListener('click', () => abrirCopia());
+$('btnProbar').addEventListener('click', () => {
+  try{ cronoAudio = cronoAudio || new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
+  pitar();
+  try{ navigator.vibrate && navigator.vibrate([600, 200, 600]); }catch(e){}
+});
+
+function paqueteCopia(){
+  return JSON.stringify({
+    app: 'recetario-air-fryer',
+    version: VERSION,
+    fecha: new Date().toISOString(),
+    propias: datos.propias,
+    favoritos: datos.favoritos,
+    fotos: fotos
+  });
+}
+function nombreCopia(){
+  const d = new Date();
+  const dos = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${dos(d.getMonth()+1)}${dos(d.getDate())} Air fryer.json`;
+}
+
+$('descargarCopia').addEventListener('click', async () => {
+  const e = $('errorCopia');
+  e.style.color = 'var(--gris)';
+  e.textContent = 'Preparando la copia…';
+  const texto = paqueteCopia();
+  const nombre = nombreCopia();
+  try{
+    const bajar = (typeof claude !== 'undefined' && claude.use) ? await claude.use('downloads') : null;
+    if(bajar){
+      await bajar.save({filename: nombre, data: new Blob([texto], {type: 'application/json'})});
+      e.textContent = 'Copia guardada: ' + nombre;
+      return;
+    }
+  }catch(err){
+    if(err && err.code === 'declined'){ e.textContent = ''; return; }
+    console.error(err);
+  }
+  try{
+    const url = URL.createObjectURL(new Blob([texto], {type: 'application/json'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    e.textContent = 'Copia descargada: ' + nombre;
+  }catch(err){
+    e.style.color = 'var(--paprika)';
+    e.textContent = 'No se ha podido descargar la copia en este dispositivo.';
+  }
+});
+
+$('elegirCopia').addEventListener('click', () => $('ficheroCopia').click());
+
+$('ficheroCopia').addEventListener('change', async ev => {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!f) return;
+  const e = $('errorCopia');
+  try{
+    const d = JSON.parse(await f.text());
+    const lista = Array.isArray(d) ? d : d.propias;
+    if(!Array.isArray(lista)) throw new Error('formato');
+    const ids = new Set(datos.propias.map(r => r.id));
+    let nuevas = 0;
+    lista.forEach(r => { if(r && r.id && !ids.has(r.id)){ datos.propias.push(r); nuevas++; } });
+    if(Array.isArray(d.favoritos))
+      d.favoritos.forEach(id => { if(!datos.favoritos.includes(id)) datos.favoritos.push(id); });
+    ordenarPropias();
+    await guardarDatos();
+
+    let conFoto = 0;
+    if(d.fotos && typeof d.fotos === 'object'){
+      for(const id of Object.keys(d.fotos)){
+        if(!fotos[id] && d.fotos[id]){ await guardarFoto(id, d.fotos[id]); conFoto++; }
+      }
+    }
+    pintarRejilla();
+    resumenCopia();
+    e.style.color = 'var(--gris)';
+    e.textContent = `Restaurado: ${nuevas} receta(s) y ${conFoto} foto(s). Lo que ya tenías se ha respetado.`;
+  }catch(err){
+    console.error(err);
+    e.style.color = 'var(--paprika)';
+    e.textContent = 'Ese archivo no es una copia del recetario.';
+  }
+});
+
+function resumenCopia(){
+  const nf = Object.keys(fotos).length;
+  const kb = Math.round(paqueteCopia().length / 1024);
+  $('resumenCopia').textContent =
+    `${datos.propias.length} receta(s) tuya(s) y ${nf} foto(s) · unos ${kb} KB`;
+}
+
+function abrirCopia(){
+  $('copiaTexto').value = JSON.stringify({propias: datos.propias, favoritos: datos.favoritos});
+  $('errorCopia').textContent = '';
+  $('espacio').textContent = '';
+  resumenCopia();
+  abrir('capaCopia');
+}
+$('btnCopias').addEventListener('click', abrirCopia);
+$('copiarPortapapeles').addEventListener('click', async () => {
+  const t = $('copiaTexto'); t.select();
+  try{ await navigator.clipboard.writeText(t.value); }catch(e){ document.execCommand('copy'); }
+  $('errorCopia').style.color = 'var(--gris)';
+  $('errorCopia').textContent = 'Copiado.';
+});
+$('restaurar').addEventListener('click', async () => {
+  try{
+    const d = JSON.parse($('copiaTexto').value);
+    const lista = Array.isArray(d) ? d : d.propias;
+    if(!Array.isArray(lista)) throw new Error();
+    const ids = new Set(datos.propias.map(r => r.id));
+    lista.forEach(r => { if(r && r.id && !ids.has(r.id)) datos.propias.push(r); });
+    if(d.favoritos) d.favoritos.forEach(id => { if(!datos.favoritos.includes(id)) datos.favoritos.push(id); });
+    await guardarDatos(); pintarRejilla(); cerrar('capaCopia');
+  }catch(e){
+    $('errorCopia').style.color = 'var(--paprika)';
+    $('errorCopia').textContent = 'Ese texto no es una copia válida. Pega el que generó la app.';
+  }
+});
+
+/* ============================================================
+   6. Arranque
+   ============================================================ */
+/* ---- actualización automática (ordenador y móvil) ---- */
+let registro = null, recargando = false;
+const mostrarBanner = () => { $('banner').hidden = false; };
+
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    registro = reg;
+    if(reg.waiting) mostrarBanner();
+    reg.addEventListener('updatefound', () => {
+      const nuevo = reg.installing;
+      if(!nuevo) return;
+      nuevo.addEventListener('statechange', () => {
+        if(nuevo.state === 'installed' && navigator.serviceWorker.controller) mostrarBanner();
+      });
+    });
+    reg.update();
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) reg.update(); });
+    setInterval(() => reg.update(), 30 * 60 * 1000);
+  }).catch(() => {});
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(recargando) return;
+    recargando = true;
+    location.reload();
+  });
+}
+
+$('btnActualizarYa').addEventListener('click', () => {
+  const w = registro && (registro.waiting || registro.installing);
+  if(w) w.postMessage({tipo:'saltar'});
+  else location.reload();
+});
+
+$('btnActualizar').addEventListener('click', async () => {
+  const e = $('estadoAct');
+  e.style.color = 'var(--gris)';
+  e.textContent = 'Buscando la versión nueva…';
+  try{
+    // 1. tirar todo lo guardado de la versión vieja
+    if(window.caches){
+      const claves = await caches.keys();
+      await Promise.all(claves.map(k => caches.delete(k)));
+    }
+    // 2. pedir la página saltándose la copia del navegador
+    await fetch('index.html', {cache: 'reload'}).catch(() => {});
+    await fetch('sw.js', {cache: 'reload'}).catch(() => {});
+    // 3. soltar el programa viejo
+    if(registro){
+      try{ await registro.update(); }catch(err){}
+      if(registro.waiting) registro.waiting.postMessage({tipo: 'saltar'});
+    }
+  }catch(err){ console.error(err); }
+  e.textContent = 'Recargando con la versión nueva…';
+  setTimeout(() => location.reload(), 1200);
+});
+(async function inicio(){
+  pintarFiltros();
+  const g = await leerClave(CLAVE);
+  if(g){
+    datos.propias = Array.isArray(g.propias) ? g.propias : [];
+    datos.favoritos = Array.isArray(g.favoritos) ? g.favoritos : [];
+    ordenarPropias();
+  }
+  $('total').textContent = RECETAS.length;
+  $('version').textContent = 'Versión ' + VERSION;
+  pintarRejilla();
+
+  $('sincro').textContent = 'Tus recetas, tus fotos y tus favoritas se guardan en este móvil. '
+    + 'Descarga de vez en cuando la copia de seguridad.';
+  const a = await leerClave(CLAVE_AJUSTES);
+  if(a && typeof a === 'object') ajustes = a;
+  const f = await leerClave(CLAVE_FOTOS);
+  if(f && typeof f === 'object') fotos = f;
+  pintarRejilla();
+  recuperarCrono();
+})();
+</script>
+</body>
+</html>
