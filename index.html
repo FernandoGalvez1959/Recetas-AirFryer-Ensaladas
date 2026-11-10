@@ -35,6 +35,9 @@ button{cursor:pointer}
   background:var(--oliva-2);border:1px solid #5B6E4E;border-radius:999px;
   padding:5px 12px 5px 10px;font-size:13px;color:#D6DCCB}
 .sinc i{width:9px;height:9px;border-radius:50%;background:var(--mostaza);flex:0 0 auto}
+.sinc.alerta{background:var(--paprika);border-color:var(--paprika);color:#fff;font-weight:600}
+.sinc.alerta i{background:#fff}
+.sinc.alerta[hidden]{display:none}
 .buscador{position:relative;display:flex;align-items:center}
 .buscador input{width:100%;background:var(--papel);border:1px solid var(--linea);
   border-radius:999px;padding:11px 40px 11px 16px;color:#111}
@@ -175,6 +178,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
   <div class="barraEstado">
     <button class="sinc" id="btnCopiaCab"><i class="guardar"></i><b>Copia de seguridad</b></button>
     <button class="sinc" id="btnProbar"><i class="guardar"></i><b>Probar el aviso</b></button>
+    <button class="sinc alerta" id="avisoCopia" hidden><i></i><b></b></button>
   </div>
   <div class="buscador">
     <input id="busca" type="text" placeholder="Buscar receta o ingrediente" aria-label="Buscar receta o ingrediente" autocomplete="off">
@@ -319,6 +323,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
         </div>
       </details>
       <p class="pista" id="sincro"></p>
+      <p class="pista" id="permanente"></p>
       <p class="pista" id="espacio"></p>
       <div class="aviso">
         <p class="pista" id="version" style="margin:0 0 10px"></p>
@@ -334,7 +339,7 @@ textarea{min-height:104px;resize:vertical;line-height:1.45}
    1. Catálogo
    Formato: momento|nombre|tipos|raciones|°C|min|ingredientes|pasos|consejo
    ============================================================ */
-const VERSION = '6.4 · 09-11-2026';
+const VERSION = '6.5 · 10-11-2026';
 
 const CRUDO = `
 desayuno|Tostada de tomate y aceite|cereales,verduras|1|180|5|2 rebanadas de pan de hogaza;1 tomate maduro rallado;1 cucharada de aceite de oliva virgen extra;Sal|Tuesta el pan 5 minutos a 180°C dándole la vuelta a mitad;Escurre el tomate rallado y extiéndelo sobre el pan;Riega con el aceite y sala al gusto|Escurre bien el tomate o el pan se reblandece en dos minutos.
@@ -1427,11 +1432,57 @@ $('guardar').addEventListener('click', async () => {
 
 /* ---------- copia de seguridad ---------- */
 $('btnCopiaCab').addEventListener('click', () => abrirCopia());
+$('avisoCopia').addEventListener('click', () => abrirCopia());
 $('btnProbar').addEventListener('click', () => {
   try{ cronoAudio = cronoAudio || new (window.AudioContext || window.webkitAudioContext)(); }catch(e){}
   pitar();
   try{ navigator.vibrate && navigator.vibrate([600, 200, 600]); }catch(e){}
 });
+
+const CLAVE_COPIA = 'recetario:ultimacopia';
+
+/* Le pide al navegador que no borre estos datos cuando ande justo de espacio. */
+async function pedirPermanencia(){
+  try{
+    if(!navigator.storage || !navigator.storage.persist) return null;
+    if(navigator.storage.persisted && await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  }catch(e){ return null; }
+}
+async function pintarPermanencia(){
+  const r = await pedirPermanencia();
+  $('permanente').textContent = r === true
+    ? 'Este móvil tiene marcados tus datos como permanentes: no los borrará por falta de espacio.'
+    : (r === false
+        ? 'El navegador no ha querido marcar los datos como permanentes. La copia de seguridad es tu red.'
+        : '');
+}
+
+function diasSinCopia(){
+  let t = null;
+  try{ t = parseInt(localStorage.getItem(CLAVE_COPIA), 10); }catch(e){}
+  if(!t) return null;                                  // nunca ha hecho copia
+  return Math.floor((Date.now() - t) / 86400000);
+}
+function apuntarCopia(){
+  try{ localStorage.setItem(CLAVE_COPIA, String(Date.now())); }catch(e){}
+  avisoCopia();
+}
+function avisoCopia(){
+  const boton = $('avisoCopia');
+  const mio = datos.propias.length + Object.keys(fotos).length + Object.keys(ajustes).length;
+  if(!mio){ boton.hidden = true; return; }
+  const d = diasSinCopia();
+  if(d === null){
+    boton.hidden = false;
+    boton.querySelector('b').textContent = 'Nunca has hecho copia';
+  }else if(d >= 14){
+    boton.hidden = false;
+    boton.querySelector('b').textContent = 'Sin copia desde hace ' + d + ' días';
+  }else{
+    boton.hidden = true;
+  }
+}
 
 function paqueteCopia(){
   return JSON.stringify({
@@ -1460,6 +1511,7 @@ $('descargarCopia').addEventListener('click', async () => {
     if(bajar){
       await bajar.save({filename: nombre, data: new Blob([texto], {type: 'application/json'})});
       e.textContent = 'Copia guardada: ' + nombre;
+      apuntarCopia();
       return;
     }
   }catch(err){
@@ -1473,6 +1525,7 @@ $('descargarCopia').addEventListener('click', async () => {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
     e.textContent = 'Copia descargada: ' + nombre;
+    apuntarCopia();
   }catch(err){
     e.style.color = 'var(--paprika)';
     e.textContent = 'No se ha podido descargar la copia en este dispositivo.';
@@ -1523,6 +1576,12 @@ function resumenCopia(){
 }
 
 function abrirCopia(){
+  pintarPermanencia();
+  const d = diasSinCopia();
+  $('sincro').textContent = 'Tus recetas, tus fotos y tus ajustes se guardan en este móvil. '
+    + (d === null ? 'Todavía no has descargado ninguna copia.'
+                  : 'Última copia: hace ' + d + ' día(s).')
+    + ' Si borras los datos del navegador, se pierden.';
   $('copiaTexto').value = JSON.stringify({propias: datos.propias, favoritos: datos.favoritos});
   $('errorCopia').textContent = '';
   $('espacio').textContent = '';
@@ -1621,14 +1680,15 @@ $('btnActualizar').addEventListener('click', async () => {
   $('version').textContent = 'Versión ' + VERSION;
   pintarRejilla();
 
-  $('sincro').textContent = 'Tus recetas, tus fotos y tus favoritas se guardan en este móvil. '
-    + 'Descarga de vez en cuando la copia de seguridad.';
+
   const a = await leerClave(CLAVE_AJUSTES);
   if(a && typeof a === 'object') ajustes = a;
   const f = await leerClave(CLAVE_FOTOS);
   if(f && typeof f === 'object') fotos = f;
   pintarRejilla();
   recuperarCrono();
+  avisoCopia();
+  pedirPermanencia();
 })();
 </script>
 </body>
